@@ -1,0 +1,83 @@
+{
+  // ── TypeScript ────────────────────────────────────────────────
+  // Usa la versión de TS instalada en el proyecto, no la de VS Code
+  "typescript.tsdk": "node_modules/typescript/lib",
+  // Habilita verificación de tipos en archivos JS también
+  "js/ts.implicitProjectConfig.checkJs": false,
+  // Autocompletado de imports: siempre usar rutas relativas o alias (@/)
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  // Organiza imports al guardar (elimina los no usados)
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // ── Formato ───────────────────────────────────────────────────
+  // Formatea al guardar usando el formatter por defecto del archivo
+  "editor.formatOnSave": true,
+  // Prettier como formatter para TS/TSX/JS/JSON/CSS
+  "[typescript]":          { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]":     { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascript]":          { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascriptreact]":     { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]":                { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]":               { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]":                 { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  // SQL: sin autoformato (los archivos de schema los editas tú a mano)
+  "[sql]":                 { "editor.formatOnSave": false },
+
+  // ── Editor general ────────────────────────────────────────────
+  // Tamaño de indentación estándar para este proyecto
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  // Muestra espacios invisibles solo en selección (no ensucia la vista)
+  "editor.renderWhitespace": "selection",
+  // Scroll suave al navegar con teclado
+  "editor.smoothScrolling": true,
+  // Sugiere completados de palabras del archivo cuando no hay IntelliSense
+  "editor.wordBasedSuggestions": "off",
+  // Cierre automático de etiquetas JSX/TSX
+  "typescript.autoClosingTags": false,
+
+  // ── Archivos ──────────────────────────────────────────────────
+  // Inserta salto de línea al final de cada archivo al guardar
+  "files.insertFinalNewline": true,
+  // Elimina espacios al final de línea al guardar
+  "files.trimTrailingWhitespace": true,
+  // Excluye de la búsqueda global (Ctrl+Shift+F) para que sea rápida
+  "search.exclude": {
+    "**/node_modules":  true,
+    "**/.next":         true,
+    "**/dist":          true,
+    "**/.git":          true,
+    "**/package-lock.json": true
+  },
+
+  // ── Tailwind CSS ─────────────────────────────────────────────
+  // Activa IntelliSense de Tailwind en className y style
+  "tailwindCSS.includeLanguages": {
+    "typescript":      "html",
+    "typescriptreact": "html"
+  },
+  // Muestra el color de fondo en los valores hex/rgb en el editor
+  "editor.colorDecorators": true,
+  // Sugiere clases Tailwind también dentro de template literals
+  "tailwindCSS.experimental.classRegex": [
+    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["cn\\(([^)]*)\\)",   "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+  ],
+
+  // ── Git ───────────────────────────────────────────────────────
+  // Sincroniza al hacer commit (fetch + push automático)
+  "git.autofetch": true,
+  // Confirma antes de hacer sync para evitar push accidentales
+  "git.confirmSync": true,
+  // No sugiere publicar ramas en remoto automáticamente
+  "git.publishBranch": "prompt",
+
+  // ── Terminal ──────────────────────────────────────────────────
+  // Shell por defecto en Windows: PowerShell
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  // Tamaño de fuente un poco más grande en terminal
+  "terminal.integrated.fontSize": 13
+}
