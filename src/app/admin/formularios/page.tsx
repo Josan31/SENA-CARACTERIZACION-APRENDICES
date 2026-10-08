@@ -99,12 +99,20 @@ function FormRow({
 export default function FormulariosPage() {
   return (
     <>
-      <DashboardHeader
-        title="Gestión de Formularios"
-        subtitle="Accede a los formularios disponibles para tu proceso de formación."
-      />
+      <DashboardHeader />
 
-      <div className="flex flex-1 gap-6 p-8">
+      <div className="flex flex-1 gap-6 p-8 flex-col">
+        {/* ── Page Header ── */}
+        <div>
+          <h1 className="text-2xl font-black text-sena-navy tracking-tight">
+            Gestión de Formularios
+          </h1>
+          <p className="mt-1 text-sm font-medium text-gray-500">
+            Accede a los formularios disponibles para tu proceso de formación.
+          </p>
+        </div>
+
+        <div className="flex gap-6">
 
         {/* ── Left: form list ── */}
         <section
@@ -164,6 +172,7 @@ export default function FormulariosPage() {
           </div>
         </aside>
       </div>
+    </div>
     </>
   );
 }

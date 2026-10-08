@@ -8,6 +8,7 @@ import {
   User,
   Users,
   Zap,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -72,13 +73,6 @@ const QUICK_ACTIONS = [
   },
 ] as const;
 
-/* ─────────────────────────────────────────────────────────
-   Sub-components
-───────────────────────────────────────────────────────── */
-
-/**
- * Tarjeta de métrica idéntica a la imagen de diseño
- */
 function MetricCard({
   label,
   value,
@@ -223,12 +217,25 @@ export function QuickActionsSection() {
 export default function AdminHomePage() {
   return (
     <>
-      <DashboardHeader
-        title="Bienvenido(a), Valentina"
-        subtitle="Programa de Formación: Tecnólogo en Programación de Software (Ficha 234567)"
-      />
+      <DashboardHeader />
 
       <div className="flex-1 space-y-8 p-8">
+        {/* ── Page Header / Welcome Text ── */}
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="truncate text-3xl font-black text-sena-navy tracking-tight">
+              Bienvenido(a), Valentina
+            </h1>
+            <span className="inline-flex items-center gap-1 rounded-full bg-sena-green/10 px-2.5 py-0.5 text-xs font-semibold text-sena-green">
+              <Sparkles size={12} />
+              Activa
+            </span>
+          </div>
+          <p className="mt-2 flex items-center gap-2 text-sm font-medium text-gray-500">
+            <span className="font-semibold text-sena-green">Programa:</span>
+            <span className="truncate">Tecnólogo en Programación de Software (Ficha 234567)</span>
+          </p>
+        </div>
         {/* ── Welcome banner ── */}
         <section
           aria-labelledby="welcome-heading"

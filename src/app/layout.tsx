@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
-  title: "COMENTA — SENA Caracterización Aprendices",
+  title: "CARACTERIZA — SENA Caracterización Aprendices",
   description: "Plataforma de caracterización y valoración de aprendices SENA.",
 };
 
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <TooltipProvider>{children}</TooltipProvider>
+      </body>
     </html>
   );
 }

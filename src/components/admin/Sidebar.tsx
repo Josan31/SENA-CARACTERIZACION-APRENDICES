@@ -12,9 +12,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-/* ─────────────────────────────────────────────────────
-   Nav item definition
-───────────────────────────────────────────────────── */
 const NAV_ITEMS = [
   { href: "/admin", label: "Inicio", icon: Home },
   { href: "/admin/formularios", label: "Formularios", icon: ClipboardList },

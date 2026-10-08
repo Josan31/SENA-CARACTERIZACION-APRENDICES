@@ -98,12 +98,20 @@ export default function ResultadosPage() {
 
   return (
     <>
-      <DashboardHeader
-        title="Administración de Resultados"
-        subtitle="Consulta y gestiona los resultados de tus programas y fichas de formación."
-      />
+      <DashboardHeader />
 
-      <div className="flex flex-1 gap-6 p-8">
+      <div className="flex flex-1 gap-6 p-8 flex-col">
+        {/* ── Page Header ── */}
+        <div>
+          <h1 className="text-2xl font-black text-sena-navy tracking-tight">
+            Administración de Resultados
+          </h1>
+          <p className="mt-1 text-sm font-medium text-gray-500">
+            Consulta y gestiona los resultados de tus programas y fichas de formación.
+          </p>
+        </div>
+
+        <div className="flex gap-6">
 
         {/* ── Left: search + results list ── */}
         <section aria-label="Lista de resultados" className="flex flex-1 flex-col gap-5 min-w-0">
@@ -213,6 +221,7 @@ export default function ResultadosPage() {
           </div>
         </aside>
       </div>
+    </div>
     </>
   );
 }
