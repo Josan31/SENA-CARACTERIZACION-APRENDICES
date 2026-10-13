@@ -1,0 +1,489 @@
+// ==============================================================================
+// SISTEMA DE CARACTERIZACIÓN DE APRENDICES - SENA
+// Esquema Relacional de Base de Datos (PostgreSQL) con Prisma ORM
+// ==============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------------------------
+// 1. CATÁLOGOS MAESTROS (Administrados por Bienestar al Aprendiz)
+// ------------------------------------------------------------------------------
+model Catalogo {
+  id        String  @id @default(uuid()) @db.Uuid
+  categoria String  @db.VarChar(50) // ej: 'sexo', 'jornada', 'eps', 'estrato', 'tipo_documento'
+  valor     String  @db.VarChar(150) // Texto legible para el desplegable del frontend
+  orden     Int?    @default(0) // Orden de visualización en formularios
+  activo    Boolean @default(true) // Permite ocultar opciones obsoletas sin romper histórico
+
+  // Relaciones inversas hacia las entidades consumidoras
+  fichasPrograma              Ficha[]                   @relation("FichaPrograma")
+  fichasJornada               Ficha[]                   @relation("FichaJornada")
+  fichasModalidad             Ficha[]                   @relation("FichaModalidad")
+  fichasNivel                 Ficha[]                   @relation("FichaNivel")
+  aprendicesTipoDocumento     Aprendiz[]                @relation("AprendizTipoDoc")
+  aprendicesSexo              Aprendiz[]                @relation("AprendizSexo")
+  aprendicesOrientacionSexual Aprendiz[]                @relation("AprendizOrientacionSexual")
+  aprendicesEstadoCivil       Aprendiz[]                @relation("AprendizEstadoCivil")
+  localizacionesCiudad        Localizacion[]            @relation("LocalizacionCiudad")
+  localizacionesBarrio        Localizacion[]            @relation("LocalizacionBarrio")
+  localizacionesEstrato       Localizacion[]            @relation("LocalizacionEstrato")
+  localizacionesZona          Localizacion[]            @relation("LocalizacionZona")
+  localizacionesTenencia      Localizacion[]            @relation("LocalizacionTenencia")
+  localizacionesTransporte    Localizacion[]            @relation("LocalizacionTransporte")
+  serviciosPublicos           ServicioPublico[]         @relation("ServicioTipo")
+  saludEps                    Salud[]                   @relation("SaludEps")
+  saludSexualAnticonceptivo   SaludSexualReproductiva[] @relation("AnticonceptivoMetodo")
+  parentescos                 ParentescoHogar[]         @relation("ParentescoTipo")
+  covidVacunas                Covid19[]                 @relation("CovidVacunaTipo")
+  economiaRangoIngresos       SituacionEconomica[]      @relation("EconomiaRangoIngresos")
+  economiaGrupoEtnico         SituacionEconomica[]      @relation("EconomiaGrupoEtnico")
+  poblaciones                 PoblacionReconocida[]     @relation("PoblacionTipo")
+  apoyos                      ApoyoEstado[]             @relation("ApoyoTipo")
+  situacionesHogar            SituacionHogar[]          @relation("SituacionHogarTipo")
+  problematicas               ProblematicaSector[]      @relation("ProblematicaTipo")
+  perfilNivelPrevio           PerfilOcupacional[]       @relation("PerfilNivelPrevio")
+  perfilMotivacion            PerfilOcupacional[]       @relation("PerfilMotivacion")
+
+  @@index([categoria])
+  @@index([activo])
+  @@map("catalogos")
+}
+
+// ------------------------------------------------------------------------------
+// 2. FICHAS DE FORMACIÓN (Dato externo proveniente de Sofía Plus / Matrícula)
+// ------------------------------------------------------------------------------
+model Ficha {
+  id                    String   @id @default(uuid()) @db.Uuid
+  numeroFicha           String   @unique @map("numero_ficha") @db.VarChar(20)
+  programaId            String   @map("programa_id") @db.Uuid
+  jornadaId             String   @map("jornada_id") @db.Uuid
+  modalidadId           String   @map("modalidad_id") @db.Uuid
+  nivelFormacionId      String   @map("nivel_formacion_id") @db.Uuid // Técnico / Tecnólogo
+  instructorResponsable String?  @map("instructor_responsable") @db.VarChar(150)
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  programa       Catalogo @relation("FichaPrograma", fields: [programaId], references: [id])
+  jornada        Catalogo @relation("FichaJornada", fields: [jornadaId], references: [id])
+  modalidad      Catalogo @relation("FichaModalidad", fields: [modalidadId], references: [id])
+  nivelFormacion Catalogo @relation("FichaNivel", fields: [nivelFormacionId], references: [id])
+
+  formaciones Formacion[]
+
+  @@index([numeroFicha])
+  @@map("fichas")
+}
+
+// ------------------------------------------------------------------------------
+// 3. ENFERMEDADES (Catálogo médico internacional / CIE-10)
+// ------------------------------------------------------------------------------
+model Enfermedad {
+  id          String  @id @default(uuid()) @db.Uuid
+  nombre      String  @db.VarChar(150)
+  codigoCie10 String? @map("codigo_cie10") @db.VarChar(10)
+
+  saludRegistros Salud[]
+
+  @@map("enfermedades")
+}
+
+// ------------------------------------------------------------------------------
+// 4. APRENDICES (Entidad central pivote del sistema)
+// ------------------------------------------------------------------------------
+model Aprendiz {
+  id                  String   @id @default(uuid()) @db.Uuid
+  usuario             String   @unique @db.VarChar(20) // Mismo documento de identidad
+  nombreCompleto      String   @map("nombre_completo") @db.VarChar(150)
+  tipoDocumentoId     String   @map("tipo_documento_id") @db.Uuid
+  numeroDocumento     String   @unique @map("numero_documento") @db.VarChar(20)
+  fechaNacimiento     DateTime @map("fecha_nacimiento") @db.Date
+  sexoId              String   @map("sexo_id") @db.Uuid
+  seReconoceLgbtiq    Boolean  @default(false) @map("se_reconoce_lgbtiq")
+  orientacionSexualId String?  @map("orientacion_sexual_id") @db.Uuid
+  estadoCivilId       String   @map("estado_civil_id") @db.Uuid
+  correoPersonal      String   @map("correo_personal") @db.VarChar(100)
+  correoInstitucional String?  @map("correo_institucional") @db.VarChar(100)
+  telefono            String?  @db.VarChar(15)
+
+  // Contacto de emergencia (1:1 integrado en aprendiz para agilidad)
+  contactoEmergenciaNombre   String? @map("contacto_emergencia_nombre") @db.VarChar(150)
+  contactoEmergenciaTelefono String? @map("contacto_emergencia_telefono") @db.VarChar(15)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  // Catálogos foráneos
+  tipoDocumento     Catalogo  @relation("AprendizTipoDoc", fields: [tipoDocumentoId], references: [id])
+  sexo              Catalogo  @relation("AprendizSexo", fields: [sexoId], references: [id])
+  orientacionSexual Catalogo? @relation("AprendizOrientacionSexual", fields: [orientacionSexualId], references: [id])
+  estadoCivil       Catalogo  @relation("AprendizEstadoCivil", fields: [estadoCivilId], references: [id])
+
+  // Relaciones satélite
+  contactosEmergencia     ContactoEmergencia[]
+  aceptacionesPolitica    AceptacionPolitica[]
+  localizaciones          Localizacion[]
+  serviciosPublicos       ServicioPublico[]
+  formaciones             Formacion[]
+  salud                   Salud[]
+  saludSexualReproductiva SaludSexualReproductiva[]
+  parentescosHogar        ParentescoHogar[]
+  covid19                 Covid19[]
+  situacionEconomica      SituacionEconomica[]
+  poblacionesReconocidas  PoblacionReconocida[]
+  apoyosEstado            ApoyoEstado[]
+  situacionesHogar        SituacionHogar[]
+  problematicasSector     ProblematicaSector[]
+  perfilOcupacional       PerfilOcupacional[]
+  caracterizaciones       Caracterizacion[]
+  egresados               Egresado[]
+
+  @@index([numeroDocumento])
+  @@index([usuario])
+  @@map("aprendices")
+}
+
+// ------------------------------------------------------------------------------
+// 5. CONTACTOS DE EMERGENCIA (Soporte relacional 1:N o respaldo del aprendiz)
+// ------------------------------------------------------------------------------
+model ContactoEmergencia {
+  id         String @id @default(uuid()) @db.Uuid
+  aprendizId String @map("aprendiz_id") @db.Uuid
+  nombre     String @db.VarChar(150)
+  telefono   String @db.VarChar(15)
+
+  aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+
+  @@index([aprendizId])
+  @@map("contactos_emergencia")
+}
+
+// ------------------------------------------------------------------------------
+// 6. ACEPTACIÓN DE POLÍTICA (Habeas Data y Confidencialidad)
+// ------------------------------------------------------------------------------
+model AceptacionPolitica {
+  id              String   @id @default(uuid()) @db.Uuid
+  aprendizId      String   @map("aprendiz_id") @db.Uuid
+  aceptado        Boolean  @default(true)
+  fechaAceptacion DateTime @default(now()) @map("fecha_aceptacion")
+
+  aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+
+  @@index([aprendizId])
+  @@map("aceptacion_politica")
+}
+
+// ------------------------------------------------------------------------------
+// 7. LOCALIZACIÓN GEOGRÁFICA Y TRANSPORTE
+// ------------------------------------------------------------------------------
+model Localizacion {
+  id                 String @id @default(uuid()) @db.Uuid
+  aprendizId         String @map("aprendiz_id") @db.Uuid
+  direccion          String @db.VarChar(200)
+  ciudadId           String @map("ciudad_id") @db.Uuid
+  barrioId           String @map("barrio_id") @db.Uuid
+  estratoId          String @map("estrato_id") @db.Uuid
+  zonaId             String @map("zona_id") @db.Uuid // Urbana / Rural
+  tenenciaViviendaId String @map("tenencia_vivienda_id") @db.Uuid // Propia, arrendada, familiar
+  medioTransporteId  String @map("medio_transporte_id") @db.Uuid
+
+  aprendiz         Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  ciudad           Catalogo @relation("LocalizacionCiudad", fields: [ciudadId], references: [id])
+  barrio           Catalogo @relation("LocalizacionBarrio", fields: [barrioId], references: [id])
+  estrato          Catalogo @relation("LocalizacionEstrato", fields: [estratoId], references: [id])
+  zona             Catalogo @relation("LocalizacionZona", fields: [zonaId], references: [id])
+  tenenciaVivienda Catalogo @relation("LocalizacionTenencia", fields: [tenenciaViviendaId], references: [id])
+  medioTransporte  Catalogo @relation("LocalizacionTransporte", fields: [medioTransporteId], references: [id])
+
+  @@index([aprendizId])
+  @@map("localizacion")
+}
+
+// ------------------------------------------------------------------------------
+// 8. SERVICIOS PÚBLICOS DEL HOGAR (Multivalor: Agua, Gas, Luz, Internet, etc.)
+// ------------------------------------------------------------------------------
+model ServicioPublico {
+  id            String  @id @default(uuid()) @db.Uuid
+  aprendizId    String  @map("aprendiz_id") @db.Uuid
+  servicioId    String  @map("servicio_id") @db.Uuid
+  tieneServicio Boolean @map("tiene_servicio")
+
+  aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  servicio Catalogo @relation("ServicioTipo", fields: [servicioId], references: [id])
+
+  @@index([aprendizId])
+  @@map("servicios_publicos")
+}
+
+// ------------------------------------------------------------------------------
+// 9. FORMACIÓN (Vínculo Aprendiz con su Ficha)
+// ------------------------------------------------------------------------------
+model Formacion {
+  id         String @id @default(uuid()) @db.Uuid
+  aprendizId String @map("aprendiz_id") @db.Uuid
+  fichaId    String @map("ficha_id") @db.Uuid
+
+  aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  ficha    Ficha    @relation(fields: [fichaId], references: [id])
+
+  @@index([aprendizId])
+  @@index([fichaId])
+  @@map("formacion")
+}
+
+// ------------------------------------------------------------------------------
+// 10. SALUD (Información Sensible y Afectaciones Médicas)
+// ------------------------------------------------------------------------------
+model Salud {
+  id                          String  @id @default(uuid()) @db.Uuid
+  aprendizId                  String  @map("aprendiz_id") @db.Uuid
+  afiliadoSalud               Boolean @map("afiliado_salud")
+  epsId                       String  @map("eps_id") @db.Uuid
+  sisben                      Boolean
+  enfermedadId                String? @map("enfermedad_id") @db.Uuid
+  enfermedadOtra              String? @map("enfermedad_otra") @db.VarChar(150)
+  trastornoMental             Boolean @default(false) @map("trastorno_mental")
+  trastornoDetalle            String? @map("trastorno_detalle") @db.VarChar(150)
+  psicoterapia                Boolean @default(false)
+  requiereMedicamento         Boolean @default(false) @map("requiere_medicamento")
+  medicamentoDetalle          String? @map("medicamento_detalle") @db.VarChar(150)
+  discapacidadCertificada     Boolean @default(false) @map("discapacidad_certificada")
+  presentaDiscapacidad        Boolean @default(false) @map("presenta_discapacidad")
+  discapacidadDetalle         String? @map("discapacidad_detalle") @db.VarChar(150)
+  alergia                     Boolean @default(false)
+  alergiaDetalle              String? @map("alergia_detalle") @db.VarChar(150)
+  consumeSustancias           Boolean @default(false) @map("consume_sustancias")
+  medicamentoPermanente       Boolean @default(false) @map("medicamento_permanente")
+  medicamentoPermanenteNombre String? @map("medicamento_permanente_nombre") @db.VarChar(150)
+
+  aprendiz   Aprendiz    @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  eps        Catalogo    @relation("SaludEps", fields: [epsId], references: [id])
+  enfermedad Enfermedad? @relation(fields: [enfermedadId], references: [id])
+
+  @@index([aprendizId])
+  @@map("salud")
+}
+
+// ------------------------------------------------------------------------------
+// 11. SALUD SEXUAL Y REPRODUCTIVA (Información Altamente Sensible)
+// ------------------------------------------------------------------------------
+model SaludSexualReproductiva {
+  id                     String  @id @default(uuid()) @db.Uuid
+  aprendizId             String  @map("aprendiz_id") @db.Uuid
+  enGestacion            Boolean @default(false) @map("en_gestacion")
+  semanaGestacion        Int?    @map("semana_gestacion")
+  enLactancia            Boolean @default(false) @map("en_lactancia")
+  cabezaFamilia          Boolean @default(false) @map("cabeza_familia")
+  numHijos               Int     @default(0) @map("num_hijos")
+  numPersonasHogar       Int     @default(1) @map("num_personas_hogar")
+  metodoAnticonceptivoId String? @map("metodo_anticonceptivo_id") @db.Uuid
+  anticonceptivoDetalle  String? @map("anticonceptivo_detalle") @db.VarChar(150)
+  deseaAsesoria          Boolean @default(false) @map("desea_asesoria")
+
+  aprendiz             Aprendiz  @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  metodoAnticonceptivo Catalogo? @relation("AnticonceptivoMetodo", fields: [metodoAnticonceptivoId], references: [id])
+
+  @@index([aprendizId])
+  @@map("salud_sexual_reproductiva")
+}
+
+// ------------------------------------------------------------------------------
+// 12. PARENTESCOS DEL HOGAR (Multivalor: Madre, Padre, Hijos, Abuelos, etc.)
+// ------------------------------------------------------------------------------
+model ParentescoHogar {
+  id           String @id @default(uuid()) @db.Uuid
+  aprendizId   String @map("aprendiz_id") @db.Uuid
+  parentescoId String @map("parentesco_id") @db.Uuid
+
+  aprendiz   Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  parentesco Catalogo @relation("ParentescoTipo", fields: [parentescoId], references: [id])
+
+  @@index([aprendizId])
+  @@map("parentescos_hogar")
+}
+
+// ------------------------------------------------------------------------------
+// 13. COVID-19 (Esquema de Vacunación)
+// ------------------------------------------------------------------------------
+model Covid19 {
+  id         String  @id @default(uuid()) @db.Uuid
+  aprendizId String  @map("aprendiz_id") @db.Uuid
+  vacunado   Boolean
+  vacunaId   String? @map("vacuna_id") @db.Uuid
+  dosis      Int?
+
+  aprendiz Aprendiz  @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  vacuna   Catalogo? @relation("CovidVacunaTipo", fields: [vacunaId], references: [id])
+
+  @@index([aprendizId])
+  @@map("covid19")
+}
+
+// ------------------------------------------------------------------------------
+// 14. SITUACIÓN ECONÓMICA Y GRUPO ÉTNICO
+// ------------------------------------------------------------------------------
+model SituacionEconomica {
+  id              String  @id @default(uuid()) @db.Uuid
+  aprendizId      String  @map("aprendiz_id") @db.Uuid
+  jefeHogar       Boolean @map("jefe_hogar")
+  sostieneHogar   Boolean @map("sostiene_hogar")
+  rangoIngresosId String  @map("rango_ingresos_id") @db.Uuid
+  grupoEtnicoId   String  @map("grupo_etnico_id") @db.Uuid
+
+  aprendiz      Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  rangoIngresos Catalogo @relation("EconomiaRangoIngresos", fields: [rangoIngresosId], references: [id])
+  grupoEtnico   Catalogo @relation("EconomiaGrupoEtnico", fields: [grupoEtnicoId], references: [id])
+
+  @@index([aprendizId])
+  @@map("situacion_economica")
+}
+
+// ------------------------------------------------------------------------------
+// 15. POBLACIONES RECONOCIDAS (Multivalor: Desplazado, Víctima, Afro, etc.)
+// ------------------------------------------------------------------------------
+model PoblacionReconocida {
+  id          String @id @default(uuid()) @db.Uuid
+  aprendizId  String @map("aprendiz_id") @db.Uuid
+  poblacionId String @map("poblacion_id") @db.Uuid
+
+  aprendiz  Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  poblacion Catalogo @relation("PoblacionTipo", fields: [poblacionId], references: [id])
+
+  @@index([aprendizId])
+  @@map("poblaciones_reconocidas")
+}
+
+// ------------------------------------------------------------------------------
+// 16. APOYOS DEL ESTADO (Multivalor: Jóvenes en Acción, Renta Ciudadana, etc.)
+// ------------------------------------------------------------------------------
+model ApoyoEstado {
+  id          String  @id @default(uuid()) @db.Uuid
+  aprendizId  String  @map("aprendiz_id") @db.Uuid
+  tipoApoyoId String  @map("tipo_apoyo_id") @db.Uuid
+  detalleOtra String? @map("detalle_otra") @db.VarChar(150)
+
+  aprendiz  Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  tipoApoyo Catalogo @relation("ApoyoTipo", fields: [tipoApoyoId], references: [id])
+
+  @@index([aprendizId])
+  @@map("apoyos_estado")
+}
+
+// ------------------------------------------------------------------------------
+// 17. SITUACIONES DEL HOGAR (Multivalor Sensible: Violencia, Desempleo, etc.)
+// ------------------------------------------------------------------------------
+model SituacionHogar {
+  id          String @id @default(uuid()) @db.Uuid
+  aprendizId  String @map("aprendiz_id") @db.Uuid
+  situacionId String @map("situacion_id") @db.Uuid
+
+  aprendiz  Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  situacion Catalogo @relation("SituacionHogarTipo", fields: [situacionId], references: [id])
+
+  @@index([aprendizId])
+  @@map("situaciones_hogar")
+}
+
+// ------------------------------------------------------------------------------
+// 18. PROBLEMÁTICAS DEL SECTOR (Multivalor: Seguridad, Vías, Inundaciones, etc.)
+// ------------------------------------------------------------------------------
+model ProblematicaSector {
+  id             String @id @default(uuid()) @db.Uuid
+  aprendizId     String @map("aprendiz_id") @db.Uuid
+  problematicaId String @map("problematica_id") @db.Uuid
+
+  aprendiz     Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  problematica Catalogo @relation("ProblematicaTipo", fields: [problematicaId], references: [id])
+
+  @@index([aprendizId])
+  @@map("problematicas_sector")
+}
+
+// ------------------------------------------------------------------------------
+// 19. PERFIL OCUPACIONAL Y LABORAL
+// ------------------------------------------------------------------------------
+model PerfilOcupacional {
+  id                     String  @id @default(uuid()) @db.Uuid
+  aprendizId             String  @map("aprendiz_id") @db.Uuid
+  nivelFormacionPrevioId String  @map("nivel_formacion_previo_id") @db.Uuid
+  formacionPreviaSena    Boolean @map("formacion_previa_sena")
+  motivacionId           String  @map("motivacion_id") @db.Uuid
+  trabajaActualmente     Boolean @map("trabaja_actualmente")
+  lugarHorarioTrabajo    String? @map("lugar_horario_trabajo") @db.VarChar(150)
+
+  aprendiz             Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  nivelFormacionPrevio Catalogo @relation("PerfilNivelPrevio", fields: [nivelFormacionPrevioId], references: [id])
+  motivacion           Catalogo @relation("PerfilMotivacion", fields: [motivacionId], references: [id])
+
+  @@index([aprendizId])
+  @@map("perfil_ocupacional")
+}
+
+// ------------------------------------------------------------------------------
+// 20. CARACTERIZACIONES (Cabecera Versionada para Recaracterización Periódica)
+// ------------------------------------------------------------------------------
+model Caracterizacion {
+  id         String   @id @default(uuid()) @db.Uuid
+  aprendizId String   @map("aprendiz_id") @db.Uuid
+  fecha      DateTime @db.Date
+  version    Int      @default(1) // Soporta actualización cada 6-7 meses sin perder histórico
+  estado     String   @db.VarChar(20) // en_curso, completa, pendiente_actualizar
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+
+  @@index([aprendizId])
+  @@index([estado])
+  @@map("caracterizaciones")
+}
+
+// ------------------------------------------------------------------------------
+// 21. EGRESADOS (Trazabilidad y Estado de Culminación)
+// ------------------------------------------------------------------------------
+model Egresado {
+  id          String    @id @default(uuid()) @db.Uuid
+  aprendizId  String    @map("aprendiz_id") @db.Uuid
+  fechaEgreso DateTime? @map("fecha_egreso") @db.Date
+  estado      String?   @db.VarChar(20)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+
+  @@index([aprendizId])
+  @@map("egresados")
+}
+
+// ------------------------------------------------------------------------------
+// 22. USUARIOS Y CONTROL DE ACCESO (Personal SENA y Matriz de Permisos RBAC)
+// ------------------------------------------------------------------------------
+model Usuario {
+  id        String   @id @default(uuid()) @db.Uuid
+  nombre    String   @db.VarChar(150)
+  correo    String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(255)
+  rol       String   @db.VarChar(30) // lider_bienestar, direccion_regional, coordinacion, calidad, admin
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([correo])
+  @@index([rol])
+  @@map("usuarios")
+}
+
+model RolPermiso {
+  id          String @id @default(uuid()) @db.Uuid
+  rol         String @db.VarChar(30)
+  modulo      String @db.VarChar(50) // salud, situacion_economica, reportes, catalogos, etc.
+  nivelAcceso String @map("nivel_acceso") @db.VarChar(20) // lectura, escritura, ninguno
+
+  @@unique([rol, modulo])
+  @@map("roles_permisos")
+}

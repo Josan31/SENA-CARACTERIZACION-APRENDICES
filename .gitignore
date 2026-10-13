@@ -1,41 +1,86 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ==============================================================================
+# SENA - CARACTERIZACIÓN DE APRENDICES (.gitignore)
+# Configuración global para Frontend (Next.js) y Backend (NestJS + Prisma)
+# ==============================================================================
 
-# dependencies
+# Dependencias (Frontend y Backend)
+node_modules/
 /node_modules
-/.pnp
-.pnp.*
+backend/node_modules/
+.pnp
+.pnp.js
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
+# Compilación y Salidas de Build
+dist/
+/dist
+backend/dist/
+build/
 /build
+.next/
+/.next/
+out/
+/out/
+*.tsbuildinfo
+next-env.d.ts
 
-# misc
-.DS_Store
+# Variables de Entorno y Secretos (Seguridad)
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+backend/.env*.local
 *.pem
 
-# debug
+# Archivos ejecutables e instaladores binarios pesados
+*.exe
+*.msi
+*.dmg
+*.pkg
+*.iso
+*.deb
+*.rpm
+
+# Permitir explícitamente ejemplos de configuración
+!.env.example
+!backend/.env.example
+
+# Logs y Debugging
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
 
-# env files (can opt-in for committing if needed)
-.env*
+# Pruebas y Cobertura
+coverage/
+/coverage
+backend/coverage/
+.nyc_output
 
-# vercel
+# Archivos del Sistema Operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editores e IDEs
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Vercel
 .vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
