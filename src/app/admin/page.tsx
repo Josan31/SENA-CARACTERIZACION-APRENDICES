@@ -2,13 +2,14 @@ import DashboardHeader from "@/components/admin/DashboardHeader";
 import {
   ArrowRight,
   BarChart2,
+  Calendar,
   ClipboardCheck,
   ClipboardList,
   ClipboardX,
   User,
+  UserRound,
   Users,
   Zap,
-  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -221,21 +222,51 @@ export default function AdminHomePage() {
 
       <div className="flex-1 space-y-8 p-8">
         {/* ── Page Header / Welcome Text ── */}
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="truncate text-3xl font-black text-sena-navy tracking-tight">
-              Bienvenido(a), Valentina
-            </h1>
-            <span className="inline-flex items-center gap-1 rounded-full bg-sena-green/10 px-2.5 py-0.5 text-xs font-semibold text-sena-green">
-              <Sparkles size={12} />
-              Activa
-            </span>
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sena-green to-emerald-600 shadow-lg ring-4 ring-sena-green/20">
+                <UserRound size={26} className="text-white" strokeWidth={2.5} />
+              </div>
+              <h1 className="truncate text-3xl font-black text-sena-navy tracking-tight">
+                ¡Hola, Valentina!
+              </h1>
+            </div>
+            <p className="mt-2.5 flex items-center gap-2 text-sm font-medium text-gray-500">
+              <span className="font-semibold text-sena-green">Programa:</span>
+              <span className="truncate">
+                Tecnólogo en Programación de Software (Ficha 234567)
+              </span>
+            </p>
           </div>
-          <p className="mt-2 flex items-center gap-2 text-sm font-medium text-gray-500">
-            <span className="font-semibold text-sena-green">Programa:</span>
-            <span className="truncate">Tecnólogo en Programación de Software (Ficha 234567)</span>
-          </p>
+
+          {/* ── Right side widgets ── */}
+          <div className="flex flex-col items-start sm:items-end gap-3">
+            {/* Date chip */}
+            <div className="flex items-center gap-3 rounded-2xl bg-white border border-gray-100 p-1.5 pr-5 text-sm font-bold text-sena-navy shadow-sm transition-all hover:shadow-md hover:border-sena-green/30">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-sena-green/10 to-emerald-600/10 text-sena-green">
+                <Calendar size={18} strokeWidth={2.5} />
+              </div>
+              <span className="capitalize">
+                {new Date().toLocaleDateString("es-CO", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}
+              </span>
+            </div>
+
+            {/* Extra status info */}
+            <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 px-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sena-green opacity-40"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sena-green"></span>
+              </span>
+              Estado de ficha: <span className="text-sena-green">Activo</span>
+            </div>
+          </div>
         </div>
+
         {/* ── Welcome banner ── */}
         <section
           aria-labelledby="welcome-heading"
@@ -271,16 +302,16 @@ export default function AdminHomePage() {
                 BIENVENIDO(A) A CARACTERIZA.
               </h2>
               <p className="mt-1.5 text-xs md:text-sm font-medium text-sena-navy/75 leading-relaxed">
-                Espacio para la caracterización estudiantil. Recopilamos
-                información sobre salud, bienestar y situación socioeconómica de
-                los aprendices para la toma de decisiones y acciones que
-                fomenten su permanencia y éxito durante su formación en el SENA.
+                Espacio para la caracterización. Recopilamos información sobre
+                salud, bienestar y situación socioeconómica de los aprendices
+                para la toma de decisiones y acciones que fomenten su
+                permanencia y éxito durante su formación en el SENA.
               </p>
             </div>
           </div>
 
           {/* Bloque Derecho: Ilustración recortada al borde */}
-          <div className="absolute right-0 bottom-0 top-0 hidden md:block w-[38%] max-w-[420px] pointer-events-none overflow-hidden z-10">
+          <div className="absolute right-0 bottom-0 top-0 hidden md:block w-[38%] max-w-[420px] pointer-events-none overflow-hidden">
             <Image
               src="/admin-images/banner-girl-illustration.png"
               alt="Ilustración bienvenida CARACTERIZA"

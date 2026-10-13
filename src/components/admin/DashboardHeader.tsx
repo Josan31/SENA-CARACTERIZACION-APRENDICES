@@ -2,7 +2,6 @@
 
 import {
   Bell,
-  Calendar,
   ChevronDown,
   GraduationCap,
   LogOut,
@@ -191,18 +190,6 @@ export default function DashboardHeader({
 
           {/* ── Right: Controls, User, SENA branding ── */}
           <div className="flex items-center gap-4 shrink-0">
-            {/* Date chip */}
-            <div className="hidden lg:flex items-center gap-2 rounded-xl bg-gray-50 border border-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600">
-              <Calendar size={14} className="text-sena-green" />
-              <span>
-                {new Date().toLocaleDateString("es-CO", {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </span>
-            </div>
-
             {/* Quick Actions (Notifications, Security, Settings) */}
             <div className="flex items-center gap-2">
               <Tooltip>
