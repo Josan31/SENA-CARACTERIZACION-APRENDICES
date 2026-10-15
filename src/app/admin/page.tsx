@@ -228,14 +228,19 @@ export default function AdminHomePage() {
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sena-green to-emerald-600 shadow-lg ring-4 ring-sena-green/20">
                 <UserRound size={26} className="text-white" strokeWidth={2.5} />
               </div>
-              <h1 className="truncate text-3xl font-black text-sena-navy tracking-tight">
-                ¡Hola, Valentina!
-              </h1>
+              <div>
+                <span className="inline-block text-[10px] font-black uppercase tracking-wider text-sena-green">
+                  Panel de Administrador
+                </span>
+                <h1 className="truncate text-2xl md:text-3xl font-black text-sena-navy tracking-tight">
+                  ¡Hola, Carlos Alberto!
+                </h1>
+              </div>
             </div>
             <p className="mt-2.5 flex items-center gap-2 text-sm font-medium text-gray-500">
-              <span className="font-semibold text-sena-green">Programa:</span>
+              <span className="font-semibold text-sena-green">Rol:</span>
               <span className="truncate">
-                Tecnólogo en Programación de Software (Ficha 234567)
+                Coordinador de Bienestar al Aprendiz · Regional Cauca (CTPI)
               </span>
             </p>
           </div>
@@ -262,7 +267,7 @@ export default function AdminHomePage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sena-green opacity-40"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sena-green"></span>
               </span>
-              Estado de ficha: <span className="text-sena-green">Activo</span>
+              Estado de sesión: <span className="text-sena-green font-bold">Administrador Activo</span>
             </div>
           </div>
         </div>
@@ -299,13 +304,13 @@ export default function AdminHomePage() {
                 id="welcome-heading"
                 className="text-lg md:text-xl font-extrabold text-sena-navy tracking-tight leading-snug"
               >
-                BIENVENIDO(A) A CARACTERIZA.
+                PANEL DE GESTIÓN DE BIENESTAR AL APRENDIZ
               </h2>
               <p className="mt-1.5 text-xs md:text-sm font-medium text-sena-navy/75 leading-relaxed">
-                Espacio para la caracterización. Recopilamos información sobre
-                salud, bienestar y situación socioeconómica de los aprendices
-                para la toma de decisiones y acciones que fomenten su
-                permanencia y éxito durante su formación en el SENA.
+                Espacio de supervisión y gestión institucional. Desde este panel
+                puedes monitorear el estado de diligenciamiento de los aprendices,
+                supervisar las respuestas a los módulos de caracterización y
+                configurar la oferta de apoyos de sostenimiento en el SENA.
               </p>
             </div>
           </div>

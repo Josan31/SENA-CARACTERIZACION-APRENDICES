@@ -1,20 +1,23 @@
 "use client";
 
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
-  BarChart2,
-  ChevronRight,
-  ClipboardList,
   Home,
+  FileText,
+  BarChart2,
   Settings,
   User,
+  ArrowRight,
+  ChevronRight,
+  LogOut,
 } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Inicio", icon: Home },
-  { href: "/admin/formularios", label: "Formularios", icon: ClipboardList },
+  { href: "/admin/formularios", label: "Formularios", icon: FileText },
   { href: "/admin/resultados", label: "Resultados", icon: BarChart2 },
   { href: "/admin/administracion", label: "Administración", icon: Settings },
 ] as const;
@@ -27,102 +30,114 @@ export default function Sidebar() {
     return pathname.startsWith(href);
   }
 
+  function handleLogout() {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("sena_user");
+      } catch {
+        // ignore
+      }
+      window.location.href = "/login";
+    }
+  }
+
   return (
-    <aside className="relative flex h-full w-64 flex-col overflow-hidden bg-gradient-to-b from-[#003d1a] via-[#005d27] to-sena-green-dark text-white font-primary shadow-xl">
-      {/* ── Brand mark / Header Sidebar ── */}
-      <div className="flex items-center gap-3 px-6 py-6 border-b border-white/10">
-        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 p-2 backdrop-blur-sm shadow-inner">
-          <Image
-            src="/sena-logo-blanco.png"
-            alt="Logotipo SENA"
-            width={36}
-            height={36}
-            className="object-contain drop-shadow"
-            priority
-          />
+    <aside className="relative flex h-full w-60 shrink-0 flex-col justify-between overflow-hidden bg-[#004e26] text-white font-primary shadow-2xl select-none">
+      {/* ── Brand Header Institucional SENA ── */}
+      <div>
+        <div className="flex items-center gap-3 px-6 pt-6 pb-4">
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+            <Image
+              src="/sena-logo-blanco.png"
+              alt="Logotipo SENA"
+              width={42}
+              height={42}
+              className="object-contain"
+              priority
+            />
+          </div>
+          <div className="flex flex-col leading-tight">
+            <span className="text-[11px] font-medium text-white/90">Más</span>
+            <span className="text-xs font-black tracking-wide text-white uppercase">
+              personas
+            </span>
+            <span className="text-[10px] font-medium text-[#fdc300] mt-0.5">Más</span>
+            <span className="text-[11px] font-black tracking-wide text-[#fdc300] uppercase">
+              oportunidades
+            </span>
+          </div>
         </div>
-        <div className="min-w-0">
-          <h2 className="text-sm font-bold tracking-wide text-white leading-tight">
-            SENA Admin
-          </h2>
-          <p className="text-[10px] font-medium text-white/70 truncate">
-            Gestión de Formularios
-          </p>
-        </div>
+
+        {/* ── Menú de Navegación ── */}
+        <nav className="px-4 py-4 space-y-2" aria-label="Menú del Administrador">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs transition-all ${
+                  active
+                    ? "bg-[#c8eada] text-[#004e28] font-black shadow-sm"
+                    : "text-white/90 hover:bg-white/10 font-bold"
+                }`}
+              >
+                <Icon size={18} strokeWidth={active ? 2.6 : 2} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* ── Secciones de Navegación ── */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
-        <div>
-          <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-white/50 mb-3">
-            Menú Principal
-          </p>
-          <nav
-            className="flex flex-col gap-1.5"
-            aria-label="Navegación principal"
-          >
-            {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-              const active = isActive(href);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  aria-current={active ? "page" : undefined}
-                  className={[
-                    "group relative flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition-all duration-200",
-                    active
-                      ? "bg-white text-sena-navy font-semibold shadow-md shadow-black/10"
-                      : "text-white/80 hover:bg-white/10 hover:text-white",
-                  ].join(" ")}
-                >
-                  <Icon
-                    size={19}
-                    strokeWidth={active ? 2.2 : 1.8}
-                    className={
-                      active
-                        ? "text-sena-green"
-                        : "text-white/70 group-hover:text-white"
-                    }
-                  />
-                  <span>{label}</span>
-
-                  {active && (
-                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sena-green" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
-
-      {/* ── Diagonal institutional color accent bar ── */}
-      <div className="h-1 w-full flex" aria-hidden="true">
-        <div className="flex-1 bg-sena-green" />
-        <div className="flex-1 bg-sena-yellow" />
-        <div className="flex-1 bg-[#c1272d]" />
-      </div>
-
-      {/* ── Profile Footer / User Badge ── */}
-      <div className="p-4 bg-black/10 border-t border-white/10">
-        <Link
-          href="/admin/perfil"
-          className="flex items-center gap-3 rounded-xl p-2.5 transition-all hover:bg-white/10 group"
+      {/* ── Sección Inferior con Ribbons y Perfil ── */}
+      <div className="relative pt-12 pb-6 px-4">
+        {/* Cintas/Ribbons institucionales diagonales en esquina inferior izquierda */}
+        <div
+          className="absolute left-0 bottom-0 w-36 h-36 pointer-events-none overflow-hidden opacity-90 z-0"
+          aria-hidden="true"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white font-semibold shadow-sm group-hover:bg-white group-hover:text-sena-navy transition-colors">
-            <User size={18} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-white">
-              Usuario Admin
-            </p>
-            <p className="truncate text-[10px] text-white/60">Ver Perfil</p>
-          </div>
-          <ChevronRight
-            size={16}
-            className="text-white/40 group-hover:text-white transition-colors"
+          {/* Cinta Amarilla */}
+          <div
+            className="absolute -bottom-8 -left-8 w-32 h-16 bg-[#fdc300] -rotate-45 transform origin-bottom-left"
           />
-        </Link>
+          {/* Cinta Azul Marina */}
+          <div
+            className="absolute -bottom-10 left-6 w-36 h-12 bg-[#00304d] -rotate-45 transform origin-bottom-left"
+          />
+        </div>
+
+        {/* Botón de Perfil en Cápsula */}
+        <div className="relative z-10 space-y-2">
+          <Link
+            href="/admin/perfil"
+            className="flex items-center justify-between rounded-full bg-[#00381a]/90 hover:bg-[#00381a] border border-white/10 px-3.5 py-2.5 transition-all group shadow-sm cursor-pointer"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#004e26]">
+                <User size={15} strokeWidth={2.4} />
+              </div>
+              <span className="text-xs font-bold text-white tracking-wide">
+                Perfil
+              </span>
+            </div>
+            <ArrowRight
+              size={15}
+              className="text-white/80 group-hover:text-white group-hover:translate-x-0.5 transition-all"
+            />
+          </Link>
+
+          {/* Botón sutil de Cerrar Sesión */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full text-center text-[10px] font-bold text-emerald-200/60 hover:text-white transition-colors cursor-pointer py-1"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
     </aside>
   );

@@ -109,7 +109,7 @@ function ProfileModal({
         </div>
         <div>
           <h3 className="text-lg font-extrabold text-sena-navy leading-tight">
-            {userName} García López
+            {userName}
           </h3>
           <Badge
             variant="secondary"
@@ -125,20 +125,20 @@ function ProfileModal({
 
       {/* Profile details grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <ProfileRow icon={Mail} label="Correo" value="valentina@sena.edu.co" />
-        <ProfileRow icon={Phone} label="Teléfono" value="+57 300 123 4567" />
+        <ProfileRow icon={Mail} label="Correo" value="carestrepo@sena.edu.co" />
+        <ProfileRow icon={Phone} label="Teléfono" value="+57 (602) 824 7654" />
         <ProfileRow
           icon={MapPin}
-          label="Municipio"
-          value="Bogotá D.C., Colombia"
+          label="Sede"
+          value="Popayán, Cauca - Colombia"
         />
         <ProfileRow
           icon={GraduationCap}
-          label="Programa"
-          value="Tecnólogo en Programación de Software"
+          label="Dependencia"
+          value="Bienestar al Aprendiz"
         />
-        <ProfileRow icon={UserCircle} label="Ficha" value="234567" />
-        <ProfileRow icon={Settings} label="Centro" value="CTA Bogotá" />
+        <ProfileRow icon={UserCircle} label="Cargo" value="Coordinador de Bienestar" />
+        <ProfileRow icon={Settings} label="Centro" value="Centro de Teleinformática y Producción Industrial" />
       </div>
 
       <Separator className="bg-gray-100" />
@@ -146,9 +146,9 @@ function ProfileModal({
       {/* Stats strip */}
       <div className="grid grid-cols-3 divide-x divide-gray-100 rounded-xl bg-gray-50 px-2 py-3 text-center">
         {[
-          { label: "Encuestas", value: "3/6" },
-          { label: "Estado", value: "Activo" },
-          { label: "Completitud", value: "50%" },
+          { label: "Aprendices", value: "250" },
+          { label: "Módulos", value: "10" },
+          { label: "Cobertura", value: "88%" },
         ].map(({ label, value }) => (
           <div key={label} className="px-3">
             <p className="text-base font-extrabold text-sena-navy">{value}</p>
@@ -166,8 +166,8 @@ function ProfileModal({
    Main Header Component
 ───────────────────────────────────────────────────────── */
 export default function DashboardHeader({
-  userName = "Valentina",
-  userRole = "Aprendiz SENA",
+  userName = "Carlos Restrepo",
+  userRole = "Administrador / Bienestar",
 }: DashboardHeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -320,6 +320,16 @@ export default function DashboardHeader({
 
                 <DropdownMenuItem
                   id="menu-cerrar-sesion"
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      try {
+                        localStorage.removeItem("sena_user");
+                      } catch {
+                        // ignore
+                      }
+                      window.location.href = "/login";
+                    }
+                  }}
                   className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 cursor-pointer transition-colors"
                 >
                   <LogOut size={16} />
