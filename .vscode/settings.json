@@ -1,83 +1,130 @@
 {
-  // ── TypeScript ────────────────────────────────────────────────
-  // Usa la versión de TS instalada en el proyecto, no la de VS Code
+  // ===========================================
+  // ── TypeScript & JavaScript Configuration ──
+  // ===========================================
+
+  // Fuerza a VS Code a utilizar el compilador de TypeScript instalado en `node_modules`
+  // en lugar de la versión global del editor, garantizando consistencia en el equipo.
   "typescript.tsdk": "node_modules/typescript/lib",
-  // Habilita verificación de tipos en archivos JS también
+
+  // Desactiva la verificación implícita de tipos de TypeScript en archivos JavaScript puros (.js).
   "js/ts.implicitProjectConfig.checkJs": false,
-  // Autocompletado de imports: siempre usar rutas relativas o alias (@/)
+
+  // Define la estrategia de resolución de módulos para auto-importaciones.
+  // Usa "non-relative" para priorizar alias configurados (ej: `@/components/...`) sobre rutas relativas (`../../`).
   "typescript.preferences.importModuleSpecifier": "non-relative",
-  // Organiza imports al guardar (elimina los no usados)
+
+  // Acciones automáticas ejecutadas al guardar un archivo:
+  // - Reorganiza y elimina los imports no utilizados (`organizeImports`).
+  // - Aplica soluciones automáticas reportadas por ESLint (`fixAll.eslint`).
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit",
     "source.fixAll.eslint": "explicit"
   },
 
-  // ── Formato ───────────────────────────────────────────────────
-  // Formatea al guardar usando el formatter por defecto del archivo
-  "editor.formatOnSave": true,
-  // Prettier como formatter para TS/TSX/JS/JSON/CSS
-  "[typescript]":          { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[typescriptreact]":     { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[javascript]":          { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[javascriptreact]":     { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[json]":                { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[jsonc]":               { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[css]":                 { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  // SQL: sin autoformato (los archivos de schema los editas tú a mano)
-  "[sql]":                 { "editor.formatOnSave": false },
+  // ===========================================
+  // ── Code Formatting (Prettier & Handlers) ──
+  // ===========================================
 
-  // ── Editor general ────────────────────────────────────────────
-  // Tamaño de indentación estándar para este proyecto
+  // Habilita el formateo automático de código cada vez que se guarda un archivo.
+  "editor.formatOnSave": true,
+
+  // Asignación explícita de Prettier (`esbenp.prettier-vscode`) como el formateador por defecto
+  // para lenguajes web front-end y archivos de configuración estructurados.
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+
+  // Excepción de formateo: Desactiva el auto-formateo al guardar para scripts de SQL
+  // con el fin de preservar estructuras de esquemas y layouts de consultas manuales.
+  "[sql]": { "editor.formatOnSave": false },
+
+  // ==================================
+  // ── Editor Appearance & Behavior ──
+  // ==================================
+
+  // Indentación estándar: 2 espacios equivalentes a 1 tabulación.
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
-  // Muestra espacios invisibles solo en selección (no ensucia la vista)
+
+  // Renderiza caracteres invisibles (espacios/tabs) únicamente en el texto que esté seleccionado.
   "editor.renderWhitespace": "selection",
-  // Scroll suave al navegar con teclado
+
+  // Habilita animación de desplazamiento suave al navegar por el código usando el teclado.
   "editor.smoothScrolling": true,
-  // Sugiere completados de palabras del archivo cuando no hay IntelliSense
+
+  // Desactiva sugerencias de auto-completado basadas en palabras encontradas dentro del archivo,
+  // evitando ruido y dando prioridad estricta al IntelliSense del Lenguaje.
   "editor.wordBasedSuggestions": "off",
-  // Cierre automático de etiquetas JSX/TSX
+
+  // Desactiva el cierre automático de etiquetas HTML/JSX al escribir en TypeScript.
   "typescript.autoClosingTags": false,
 
-  // ── Archivos ──────────────────────────────────────────────────
-  // Inserta salto de línea al final de cada archivo al guardar
+  // =====================================
+  // ── File System & Search Exclusions ──
+  // =====================================
+
+  // Inserta automáticamente una línea en blanco al final del archivo al guardar (convención POSIX).
   "files.insertFinalNewline": true,
-  // Elimina espacios al final de línea al guardar
+
+  // Elimina automáticamente espacios en blanco innecesarios al final de cada línea al guardar.
   "files.trimTrailingWhitespace": true,
-  // Excluye de la búsqueda global (Ctrl+Shift+F) para que sea rápida
+
+  // Excluye directorios pesados y archivos autogenerados de la búsqueda global (Ctrl+Shift+F)
+  // para optimizar el rendimiento y evitar resultados duplicados o irrelevantes.
   "search.exclude": {
-    "**/node_modules":  true,
-    "**/.next":         true,
-    "**/dist":          true,
-    "**/.git":          true,
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/.git": true,
     "**/package-lock.json": true
   },
 
-  // ── Tailwind CSS ─────────────────────────────────────────────
-  // Activa IntelliSense de Tailwind en className y style
+  // ========================================
+  // ── Tailwind CSS Extension Integration ──
+  // ========================================
+
+  // Asocia archivos `.ts` y `.tsx` con sintaxis `html` para permitir
+  // auto-completado de clases Tailwind en cadenas de texto.
   "tailwindCSS.includeLanguages": {
-    "typescript":      "html",
+    "typescript": "html",
     "typescriptreact": "html"
   },
-  // Muestra el color de fondo en los valores hex/rgb en el editor
+
+  // Muestra una pequeña muestra visual del color (vista previa) en códigos de color Hex/RGB/HSL.
   "editor.colorDecorators": true,
-  // Sugiere clases Tailwind también dentro de template literals
+
+  // Expresiones regulares para activar el IntelliSense de Tailwind dentro de helpers
+  // como `clsx(...)` o `cn(...)` (común en shadcn/ui y componentes modulares).
   "tailwindCSS.experimental.classRegex": [
     ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
-    ["cn\\(([^)]*)\\)",   "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
   ],
 
-  // ── Git ───────────────────────────────────────────────────────
-  // Sincroniza al hacer commit (fetch + push automático)
+  // ==========================
+  // ── Source Control (Git) ──
+  // ==========================
+
+  // Recupera automáticamente los cambios desde el repositorio remoto en segundo plano (git fetch).
   "git.autofetch": true,
-  // Confirma antes de hacer sync para evitar push accidentales
+
+  // Solicita confirmación explícita antes de ejecutar acciones de sincronización (push/pull).
   "git.confirmSync": true,
-  // No sugiere publicar ramas en remoto automáticamente
+
+  // Muestra una confirmación de advertencia antes de publicar una nueva rama local al servidor remoto.
   "git.publishBranch": "prompt",
 
-  // ── Terminal ──────────────────────────────────────────────────
-  // Shell por defecto en Windows: PowerShell
+  // =========================
+  // ── Integrated Terminal ──
+  // =========================
+
+  // Define PowerShell como el entorno de terminal integrado por defecto para sistemas Windows.
   "terminal.integrated.defaultProfile.windows": "PowerShell",
-  // Tamaño de fuente un poco más grande en terminal
+
+  // Tamaño de tipografía en píxeles para la terminal integrada.
   "terminal.integrated.fontSize": 13
 }
