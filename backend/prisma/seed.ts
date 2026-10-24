@@ -11,12 +11,12 @@
  *      más los catálogos que el schema exige y que hoy no tienen preguntas.
  *   2. 6 aprendices ficticios con ficha, formación, caracterización (v1),
  *      satélites 1:1 ligados a caracterizacion_id y aceptación de política.
- *   3. 2 usuarios SENA ficticios (password SOLO como hash scrypt).
+ *   3. 2 usuarios SENA ficticios (password SOLO como hash bcrypt).
  * La pregunta de prueba del gestor (esPersonalizada, "Aberlardo o cepeda")
  * se DESCARTA: no tiene datos en el seed (decisión 4 del responsable BD).
  */
 import { PrismaClient } from '@prisma/client';
-import { scryptSync, randomBytes } from 'crypto';
+import bcrypt from 'bcrypt'; // bcrypt ^6.0.0 declarado en backend/package.json
 import type { PrismaClient as TxClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -44,6 +44,7 @@ const CATALOGOS: GrupoCatalogo[] = [
   // --- Módulo salud ---
   { categoria: 'eps', valores: ['Nueva EPS', 'Sanitas', 'Sura', 'Salud Total', 'Famisanar', 'Coosalud', 'Compensar', 'Mutual Ser', 'Asmet Salud', 'Capital Salud', 'Savia Salud', 'Otra'] },
   { categoria: 'regimen_salud', valores: ['Contributivo (Cotizante)', 'Contributivo (Beneficiario)', 'Subsidiado', 'Especial o Excepción', 'No asegurado'] },
+  { categoria: 'sisben_estado', valores: ['Sí', 'No', 'En trámite'] }, // decisión P2
   { categoria: 'grupo_sisben', valores: ['Grupo A (Pobreza extrema)', 'Grupo B (Pobreza moderada)', 'Grupo C (Vulnerable)', 'Grupo D (No pobre / No vulnerable)', 'No aplica'] },
   { categoria: 'tipo_discapacidad', valores: ['Visual', 'Auditiva', 'Física / Motriz', 'Intelectual', 'Psicosocial', 'Múltiple', 'Ninguna'] },
   // --- Salud sexual: métodos (la pregunta "¿cuál?" es condicional del gestor, no implementada) ---
@@ -96,11 +97,9 @@ const cat = (mapa: Map<string, string>, categoria: string, valor: string): strin
 // -----------------------------------------------------------------------------
 // 2. UTILIDADES
 // -----------------------------------------------------------------------------
-/** Hash scrypt (sin dependencias externas). NUNCA texto plano en Usuario.password. */
+/** Hash bcrypt (lo declarado por el backend). NUNCA texto plano en Usuario.password. */
 function hashPassword(plain: string): string {
-  const salt = randomBytes(16).toString('hex');
-  const hash = scryptSync(plain, salt, 64).toString('hex');
-  return `scrypt$${salt}$${hash}`;
+  return bcrypt.hashSync(plain, 10);
 }
 
 /** RAD-SENA-AAAA-NNNNNN con la secuencia creada en la migración checks_y_rls. */
@@ -144,7 +143,7 @@ type AprendizDemo = {
   // salud
   eps: string;
   regimenSalud: string;
-  sisben: boolean;
+  sisbenEstado: 'Sí' | 'No' | 'En trámite';
   grupoSisben?: string;
   discapacidad: boolean;
   tipoDiscapacidad?: string;
@@ -183,7 +182,7 @@ const APRENDICES_DEMO: AprendizDemo[] = [
     estadoCivil: 'Soltero(a)', correoPersonal: 'demo1.ficticio@ejemplo.com', correoInst: 'demo1@soy.sena.edu.co',
     telefono: '3001110001', acudiente: 'Acudiente Uno Demo', telAcudiente: '3001111001', parentescoAcudiente: 'Madre',
     ficha: '2807891', programa: 'Análisis y Desarrollo de Software', jornada: 'Diurna', modalidad: 'Presencial', nivelFormacion: 'Tecnólogo',
-    eps: 'Nueva EPS', regimenSalud: 'Contributivo (Cotizante)', sisben: true, grupoSisben: 'Grupo B (Pobreza moderada)',
+    eps: 'Nueva EPS', regimenSalud: 'Contributivo (Cotizante)', sisbenEstado: 'Sí', grupoSisben: 'Grupo B (Pobreza moderada)',
     discapacidad: false, enGestacion: false, enLactancia: false, hijos: 0, personasHogar: 4,
     vacunado: true, vacuna: 'Sinovac / CoronaVac', dosis: 2, esquemaCompleto: true,
     sustento: 'Madre', personasACargo: 0, rangoIngresos: 'Entre 1 y 2 SMMLV', fuenteIngresos: 'Salario fijo / Empleo formal',
@@ -196,7 +195,7 @@ const APRENDICES_DEMO: AprendizDemo[] = [
     estadoCivil: 'Unión Libre', correoPersonal: 'demo2.ficticio@ejemplo.com', correoInst: 'demo2@soy.sena.edu.co',
     telefono: '3001110002', acudiente: 'Acudiente Dos Demo', telAcudiente: '3001111002', parentescoAcudiente: 'Cónyuge / Pareja',
     ficha: '2807892', programa: 'Logística Empresarial', jornada: 'Nocturna', modalidad: 'Presencial', nivelFormacion: 'Técnico',
-    eps: 'Sura', regimenSalud: 'Subsidiado', sisben: true, grupoSisben: 'Grupo C (Vulnerable)',
+    eps: 'Sura', regimenSalud: 'Subsidiado', sisbenEstado: 'Sí', grupoSisben: 'Grupo C (Vulnerable)',
     discapacidad: true, tipoDiscapacidad: 'Auditiva',
     enGestacion: null, enLactancia: null, hijos: 0, personasHogar: 3,
     vacunado: true, vacuna: 'Pfizer / BioNTech', dosis: 3, esquemaCompleto: true,
@@ -212,7 +211,7 @@ const APRENDICES_DEMO: AprendizDemo[] = [
     estadoCivil: 'Soltero(a)', correoPersonal: 'demo3.ficticio@ejemplo.com', correoInst: 'demo3@soy.sena.edu.co',
     telefono: '3001110003', acudiente: 'Acudiente Tres Demo', telAcudiente: '3001111003', parentescoAcudiente: 'Padre',
     ficha: '2807891', programa: 'Análisis y Desarrollo de Software', jornada: 'Diurna', modalidad: 'Presencial', nivelFormacion: 'Tecnólogo',
-    eps: 'Famisanar', regimenSalud: 'Subsidiado', sisben: true, grupoSisben: 'Grupo A (Pobreza extrema)', discapacidad: false,
+    eps: 'Famisanar', regimenSalud: 'Subsidiado', sisbenEstado: 'Sí', grupoSisben: 'Grupo A (Pobreza extrema)', discapacidad: false,
     enGestacion: true, semanaGestacion: 24, enLactancia: false, anticonceptivo: 'Hormonal oral', hijos: 1, personasHogar: 5,
     vacunado: true, vacuna: 'Moderna', dosis: 2, esquemaCompleto: false,
     sustento: 'Ambos padres', personasACargo: 0, rangoIngresos: 'Menos de 1 SMMLV', fuenteIngresos: 'Subsidios del gobierno',
@@ -225,7 +224,7 @@ const APRENDICES_DEMO: AprendizDemo[] = [
     estadoCivil: 'Casado(a)', correoPersonal: 'demo4.ficticio@ejemplo.com', correoInst: 'demo4@soy.sena.edu.co',
     telefono: '3001110004', acudiente: 'Acudiente Cuatro Demo', telAcudiente: '3001111004', parentescoAcudiente: 'Hermano(a)',
     ficha: '2807893', programa: 'Contabilidad y Finanzas', jornada: 'Mixta', modalidad: 'Virtual', nivelFormacion: 'Tecnólogo',
-    eps: 'Coosalud', regimenSalud: 'Especial o Excepción', sisben: false, discapacidad: true, tipoDiscapacidad: 'Física / Motriz',
+    eps: 'Coosalud', regimenSalud: 'Especial o Excepción', sisbenEstado: 'No', discapacidad: true, tipoDiscapacidad: 'Física / Motriz',
     enGestacion: null, enLactancia: null, hijos: 2, personasHogar: 4,
     vacunado: true, vacuna: 'AstraZeneca', dosis: 2, esquemaCompleto: true,
     sustento: 'Cónyuge / Pareja', personasACargo: 2, rangoIngresos: 'Más de 3 SMMLV', fuenteIngresos: 'Remesas del exterior',
@@ -240,7 +239,7 @@ const APRENDICES_DEMO: AprendizDemo[] = [
     estadoCivil: 'Separado(a) / Divorciado(a)', correoPersonal: 'demo5.ficticio@ejemplo.com', correoInst: 'demo5@soy.sena.edu.co',
     telefono: '3001110005', acudiente: 'Acudiente Cinco Demo', telAcudiente: '3001111005', parentescoAcudiente: 'Abuelo(a)',
     ficha: '2807892', programa: 'Logística Empresarial', jornada: 'Nocturna', modalidad: 'Presencial', nivelFormacion: 'Técnico',
-    eps: 'Mutual Ser', regimenSalud: 'Subsidiado', sisben: true, grupoSisben: 'Grupo B (Pobreza moderada)', discapacidad: false,
+    eps: 'Mutual Ser', regimenSalud: 'Subsidiado', sisbenEstado: 'Sí', grupoSisben: 'Grupo B (Pobreza moderada)', discapacidad: false,
     enGestacion: false, enLactancia: true, anticonceptivo: 'DIU', hijos: 1, personasHogar: 3,
     vacunado: false, esquemaCompleto: false,
     sustento: 'Abuelo(a)', personasACargo: 1, rangoIngresos: 'Entre 1 y 2 SMMLV', fuenteIngresos: 'Ayuda de familiares',
@@ -254,7 +253,7 @@ const APRENDICES_DEMO: AprendizDemo[] = [
     estadoCivil: 'Soltero(a)', correoPersonal: 'demo6.ficticio@ejemplo.com', correoInst: 'demo6@soy.sena.edu.co',
     telefono: '3001110006', acudiente: 'Acudiente Seis Demo', telAcudiente: '3001111006', parentescoAcudiente: 'Tío(a)',
     ficha: '2807893', programa: 'Contabilidad y Finanzas', jornada: 'Diurna', modalidad: 'Presencial', nivelFormacion: 'Tecnólogo',
-    eps: 'Compensar', regimenSalud: 'No asegurado', sisben: false, discapacidad: false,
+    eps: 'Compensar', regimenSalud: 'No asegurado', sisbenEstado: 'En trámite', discapacidad: false,
     enGestacion: null, enLactancia: null, hijos: 0, personasHogar: 2,
     vacunado: true, vacuna: 'Janssen (Johnson & Johnson)', dosis: 1, esquemaCompleto: true,
     sustento: 'El propio aprendiz', personasACargo: 0, rangoIngresos: 'Entre 2 y 3 SMMLV', fuenteIngresos: 'Pensión / Jubilación',
@@ -328,7 +327,12 @@ async function crearAprendizDemo(
   }
 
   await tx.aceptacionPolitica.create({
-    data: { aprendizId: aprendiz.id, aceptado: true, fechaAceptacion: new Date() },
+    data: {
+      aprendizId: aprendiz.id,
+      aceptado: true,
+      fechaAceptacion: new Date(),
+      textoVersion: 'v2026-01', // decisión P1 (provisional hasta que se publique el texto oficial)
+    },
   });
 
   // Formación (snapshot de la matrícula por caracterización)
@@ -362,7 +366,7 @@ async function crearAprendizDemo(
       afiliadoSalud: a.regimenSalud !== 'No asegurado',
       epsId: cat(mapa, 'eps', a.eps),
       regimenSaludId: cat(mapa, 'regimen_salud', a.regimenSalud),
-      sisben: a.sisben,
+      sisbenEstadoId: cat(mapa, 'sisben_estado', a.sisbenEstado), // decisión P2
       grupoSisbenId: a.grupoSisben ? cat(mapa, 'grupo_sisben', a.grupoSisben) : null,
       trastornoMental: false,
       psicoterapia: false,

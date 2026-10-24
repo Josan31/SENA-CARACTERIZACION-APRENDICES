@@ -58,6 +58,7 @@ model Catalogo {
   serviciosPublicos            ServicioPublico[]         @relation("ServicioTipo")
   saludEps                     Salud[]                   @relation("SaludEps")
   saludesRegimen               Salud[]                   @relation("SaludRegimen")
+  saludesSisbenEstado          Salud[]                   @relation("SaludSisbenEstado")
   saludesGrupoSisben           Salud[]                   @relation("SaludGrupoSisben")
   saludesTipoDiscapacidad      Salud[]                   @relation("SaludTipoDiscapacidad")
   saludSexualAnticonceptivo    SaludSexualReproductiva[] @relation("AnticonceptivoMetodo")
@@ -74,6 +75,7 @@ model Catalogo {
   perfilNivelPrevio            PerfilOcupacional[]       @relation("PerfilNivelPrevio")
   perfilMotivacion             PerfilOcupacional[]       @relation("PerfilMotivacion")
 
+  @@unique([categoria, valor]) // R2 · texto exacto por categoría (aprobado migración 3)
   @@index([categoria])
   @@index([activo])
   @@map("catalogos")
@@ -184,6 +186,9 @@ model AceptacionPolitica {
   aprendizId      String   @map("aprendiz_id") @db.Uuid
   aceptado        Boolean  @default(true)
   fechaAceptacion DateTime @default(now()) @map("fecha_aceptacion")
+  // P1 aprobado: versión del texto político aceptado (ej. 'v2026-01'); nullable
+  // para el histórico que no registró versiones.
+  textoVersion    String?  @map("texto_version") @db.VarChar(20)
 
   aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
 
@@ -262,8 +267,8 @@ model Formacion {
 // ------------------------------------------------------------------------------
 // 9. SALUD (Información Sensible y Afectaciones Médicas)
 //    Columnas fijas aprobadas: régimen de salud, grupo Sisbén y tipo de
-//    discapacidad con catálogo. sisben se conserva Boolean (pendiente decidir
-//    cómo persistir 'En trámite').
+//    discapacidad con catálogo. sisben_estado_id (cat. 'sisben_estado') guarda
+//    "Sí" / "No" / "En trámite" (decisión P2).
 // ------------------------------------------------------------------------------
 model Salud {
   id                          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -272,7 +277,7 @@ model Salud {
   afiliadoSalud               Boolean @map("afiliado_salud")
   epsId                       String  @map("eps_id") @db.Uuid
   regimenSaludId              String  @map("regimen_salud_id") @db.Uuid
-  sisben                      Boolean
+  sisbenEstadoId              String  @map("sisben_estado_id") @db.Uuid // 'Sí'|'No'|'En trámite' (P2)
   grupoSisbenId               String? @map("grupo_sisben_id") @db.Uuid
   enfermedadId                String? @map("enfermedad_id") @db.Uuid
   enfermedadOtra              String? @map("enfermedad_otra") @db.VarChar(150)
@@ -295,6 +300,7 @@ model Salud {
   caracterizacion  Caracterizacion @relation("SaludCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
   eps              Catalogo        @relation("SaludEps", fields: [epsId], references: [id])
   regimenSalud     Catalogo        @relation("SaludRegimen", fields: [regimenSaludId], references: [id])
+  sisbenEstado     Catalogo        @relation("SaludSisbenEstado", fields: [sisbenEstadoId], references: [id])
   grupoSisben      Catalogo?       @relation("SaludGrupoSisben", fields: [grupoSisbenId], references: [id])
   tipoDiscapacidad Catalogo?       @relation("SaludTipoDiscapacidad", fields: [tipoDiscapacidadId], references: [id])
   enfermedad       Enfermedad?     @relation(fields: [enfermedadId], references: [id])
@@ -527,6 +533,7 @@ model Caracterizacion {
   problematicas      ProblematicaSector[]      @relation("ProblematicaCaracterizacion")
   perfiles           PerfilOcupacional[]       @relation("PerfilCaracterizacion")
 
+  @@unique([aprendizId, version]) // una sola versión N por aprendiz (aprobado migración 3)
   @@index([aprendizId])
   @@index([estado])
   @@map("caracterizaciones")

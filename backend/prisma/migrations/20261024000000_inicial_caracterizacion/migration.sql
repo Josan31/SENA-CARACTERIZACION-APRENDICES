@@ -66,6 +66,7 @@ CREATE TABLE "aceptacion_politica" (
     "aprendiz_id" UUID NOT NULL,
     "aceptado" BOOLEAN NOT NULL DEFAULT true,
     "fecha_aceptacion" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "texto_version" VARCHAR(20),
 
     CONSTRAINT "aceptacion_politica_pkey" PRIMARY KEY ("id")
 );
@@ -115,7 +116,7 @@ CREATE TABLE "salud" (
     "afiliado_salud" BOOLEAN NOT NULL,
     "eps_id" UUID NOT NULL,
     "regimen_salud_id" UUID NOT NULL,
-    "sisben" BOOLEAN NOT NULL,
+    "sisben_estado_id" UUID NOT NULL,
     "grupo_sisben_id" UUID,
     "enfermedad_id" UUID,
     "enfermedad_otra" VARCHAR(150),
@@ -318,6 +319,8 @@ CREATE INDEX "catalogos_categoria_idx" ON "catalogos"("categoria");
 CREATE INDEX "catalogos_activo_idx" ON "catalogos"("activo");
 
 -- CreateIndex
+
+-- CreateIndex
 CREATE UNIQUE INDEX "fichas_numero_ficha_key" ON "fichas"("numero_ficha");
 
 -- CreateIndex
@@ -429,6 +432,8 @@ CREATE INDEX "caracterizaciones_aprendiz_id_idx" ON "caracterizaciones"("aprendi
 CREATE INDEX "caracterizaciones_estado_idx" ON "caracterizaciones"("estado");
 
 -- CreateIndex
+
+-- CreateIndex
 CREATE INDEX "egresados_aprendiz_id_idx" ON "egresados"("aprendiz_id");
 
 -- CreateIndex
@@ -535,6 +540,9 @@ ALTER TABLE "salud" ADD CONSTRAINT "salud_eps_id_fkey" FOREIGN KEY ("eps_id") RE
 
 -- AddForeignKey
 ALTER TABLE "salud" ADD CONSTRAINT "salud_regimen_salud_id_fkey" FOREIGN KEY ("regimen_salud_id") REFERENCES "catalogos"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "salud" ADD CONSTRAINT "salud_sisben_estado_id_fkey" FOREIGN KEY ("sisben_estado_id") REFERENCES "catalogos"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "salud" ADD CONSTRAINT "salud_grupo_sisben_id_fkey" FOREIGN KEY ("grupo_sisben_id") REFERENCES "catalogos"("id") ON DELETE SET NULL ON UPDATE CASCADE;

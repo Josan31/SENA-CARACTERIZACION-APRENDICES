@@ -38,7 +38,7 @@ Define el JSON que el backend (NestJS) debe recibir para guardar una caracteriza
     "salud": {
       "eps": "Nueva EPS",
       "regimenSalud": "Subsidiado",
-      "sisben": "Sí",                     // "Sí"|"No"|"En trámite" (ver P2)
+      "sisben": "Sí",                     // "Sí"|"No"|"En trámite" → cat. sisben_estado (P2 aprobado)
       "grupoSisben": "Grupo B (Pobreza moderada)",
       "tieneDiscapacidad": "Sí",
       "tipoDiscapacidad": "Auditiva",     // "Ninguna" → NULL
@@ -122,7 +122,7 @@ Respuesta del backend (UNA transacción, todo-o-nada):
 | `estrato` | `localizacion.estrato_id` | cat. `estrato` |
 | `eps` | `salud.eps_id` | cat. `eps` |
 | `regimenSalud` | `salud.regimen_salud_id` | cat. `regimen_salud` |
-| `sisben` | `salud.sisben` | R2 (ver P2) |
+| `sisben` | `salud.sisben_estado_id` | cat. `sisben_estado` ("Sí" / "No" / "En trámite", decisión P2) |
 | `grupoSisben` | `salud.grupo_sisben_id` | cat. `grupo_sisben` |
 | `tieneDiscapacidad` | `salud.discapacidad_certificada` + `salud.presenta_discapacidad` | R2 (ambas mismas porque la duplicidad sigue sin resolver → ver P4) |
 | `tipoDiscapacidad` | `salud.tipo_discapacidad_id` ("Ninguna" → NULL) | cat. `tipo_discapacidad` |
@@ -132,7 +132,7 @@ Respuesta del backend (UNA transacción, todo-o-nada):
 | (gestación Sí) + `semanaGestacion` | `ssr.semana_gestacion` | int 1..42 (CHECK) |
 | `madrePadreCabezaFamilia` | `ssr.cabeza_familia` | R2 |
 | `hijosACargo` | `ssr.num_hijos` | R4 (CHECK ≥ 0) |
-| `totalPersonasHogar` | `ssr.num_personas_hogar` (CHECK ≥ 1) | R4 |
+| `totalPersonasHogar` | `ssr.num_personas_hogar` | R4 (CHECK ≥ 1) |
 | `utilizaMetodoPlanificacion` | `ssr.metodo_anticonceptivo_id` | "Sí" sin "¿cuál?" → NULL (ver P3); "Prefiero no responder" → NULL |
 | `jefaturaHogar` | `se.sustento_principal_id` + banderas `jefe_hogar`/`sostiene_hogar` | cat. `sustento_principal`; banderas = `true` solo cuando el valor es "El propio aprendiz" (decisión 4: reutilización) |
 | `personasACargo` | `se.personas_a_cargo` | R4 (nueva columna aprobada) |
@@ -178,7 +178,8 @@ const $resp = await prisma.$transaction(async (tx) => {
   // 4. Satélites 1:N (multivalor): INSERT, con ambos ids también
   await tx.apoyosEstado.create({…}); // etc.
 
-  // 5. Consentimiento: aceptacion_politica.create({ aceptado: true, fechaAceptacion: now })
+  // 5. Consentimiento: aceptacion_politica.create({ aceptado: true, fechaAceptacion: now, textoVersion: 'v2026-01' })
+  //    P1 aprobado: registrar SIEMPRE la versión del texto de política aceptado.
 
   // 6. Estado y radicado
   //    Toda la versión entra en 'en_curso'; al COMPLETAR se asigna el radicado:
@@ -229,14 +230,27 @@ respuestas_personalizadas
 ```
 Criterio: solo preguntas que no alimentan estadísticas ni el informe regional (hoy: expectativa laboral y herramientas digitales). El tablero y el informe NUNCA leen de estas tablas.
 
-## 6. Pendientes por decidir (no bloquean la migración)
+## 6. Integridad aprobada e implementada (migración 3)
+
+`backend/prisma/migrations/20261024000002_uniques_coherencia_jefatura/migration.sql`:
+
+| Objeto | Definición | Motivo |
+|--------|-----------|--------|
+| UNIQUE | `catalogos(categoria, valor)` | Impide duplicar opciones por categoría; soporte del seed y de la traducción texto → id (R1) |
+| UNIQUE | `caracterizaciones(aprendiz_id, version)` | Una sola versión N por aprendiz (recaracterización periódica) |
+| DESCARTADO | ~~`formacion(aprendiz_id, ficha_id)`~~ | Lo vetó el responsable de BD: bloquearía la recaracterización |
+| TRIGGER | `trg_se_bandera_coherente` en `situacion_economica` (BEFORE INSERT OR UPDATE) | **Jefatura**: garantiza que `jefe_hogar` y `sostiene_hogar` NO puedan contradecir `sustento_principal_id` — las dos banderas deben ser `TRUE` exactamente cuando el sustento es `'El propio aprendiz'`, y rechaza el INSERT/UPDATE con excepción en caso contrario. Se usa TRIGGER porque un CHECK no puede consultar otra tabla (limitación de PostgreSQL) |
+| APROBADO P2 | `salud.sisben_estado_id` → cat. `sisben_estado` (`Sí` / `No` / `En trámite`) | "En trámite" ya no se pierde como ocurría con el Boolean |
+| APROBADO P1 | `aceptacion_politica.texto_version VARCHAR(20)` nullable | Registra qué versión de la política aceptó cada aprendiz |
+
+Nota de jefatura: el valor `'El propio aprendiz'` del catálogo `sustento_principal` va grabado dentro de la función. Si Bienestar renombra esa opción del catálogo, se debe actualizar `fn_se_bandera_coherente` (anotado en la propia migración).
+
+## 7. Pendientes por decidir (no bloquean la migración)
 
 | # | Ítem | Situación |
 |---|------|-----------|
-| P1 | `texto_version` en `aceptacion_politica` (§4.2 análisis) | No entró en las 7 decisiones → columna no migrada. Aprobarla |
-| P2 | "En trámite" de Sisbén | La columna `sisben Boolean` lo pierde; "En trámite" → `false` provisional |
 | P3 | "¿Utiliza método?" + "¿cuál?" | Condición inexistente en el gestor; "Sí" sin "cuál" persiste `metodo_anticonceptivo_id` NULL |
-| P4 | Duplicidades: `discapacidad_certificada` vs `presenta_discapacidad`; `requiere_medicamento` vs `medicamento_permanente`; `cabeza_familia` vs `jefe_hogar` | Jefatura ya quedó resuelta (sustento Principal + banderas); las otras dos quedan duplicadas hasta que Bienestar defina |
+| P4 | Duplicidades: `discapacidad_certificada` vs `presenta_discapacidad`; `requiere_medicamento` vs `medicamento_permanente`; `cabeza_familia` vs `jefe_hogar` | Jefatura ya quedó resuelta (sustento principal + banderas); las otras dos quedan duplicadas hasta que Bienestar defina |
 | P5 | `ciudad`/`barrio` catálogo | `ciudad` precargada (10 opciones ficticias); barrio listo pero sin pregunta; ampliar catálogo cuando el front lo pregunte |
 | P6 | Ficha/formaciones | Vienen de matrícula; fuera del contrato en esta fase |
 | P7 | Estados "Recaracterizado" (types del front usa `"Pendiente"|"Completo"|"Recaracterizado"`) | El CHECK de BD usa snake_case; unificar cuando el front ajuste estados |
