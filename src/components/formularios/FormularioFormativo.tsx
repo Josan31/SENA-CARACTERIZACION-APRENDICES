@@ -68,7 +68,7 @@ export default function FormularioFormativo() {
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <Link
-            href="/admin/formularios/socioeconomica"
+            href="/admin/formularios?form=socioeconomica"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-sena-navy shadow-sm border border-slate-200 hover:bg-slate-50 transition-all hover:-translate-x-0.5"
             title="Volver"
           >
@@ -297,7 +297,7 @@ export default function FormularioFormativo() {
 
             <div className="flex items-center gap-3">
               <Link
-                href="/admin/formularios/socioeconomica"
+                href="/admin/formularios?form=socioeconomica"
                 className="rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all"
               >
                 Anterior

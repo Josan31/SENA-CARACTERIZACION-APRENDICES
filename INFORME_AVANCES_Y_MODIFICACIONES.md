@@ -21,7 +21,7 @@ Los principales hitos completados abarcan:
 3. **Portal del Administrador (`/admin`)**:
    - Pantalla de **Gestión de Formularios** (`/admin/formularios`) idéntica al mockup administrativo de 2 columnas (4 tarjetas de módulos con botones `[ ✏️ Editar → ]` e ilustración lateral de estudiante con portapapeles digital para "Crear Nuevo Formulario").
    - Barra lateral institucional del administrador actualizada con las cintas institucionales, perfil y botones de cierre de sesión.
-   - Habilitación de sub-rutas directas para evitar cualquier error 404 (`/admin/formularios/basica`, `salud`, `socioeconomica`, `formativo`, `recaracterizacion`, `consentimiento`, `wizard`).
+   - Enrutamiento dinámico centralizado en `/admin/formularios` mediante parámetros (`?form=basica`, `salud`, `socioeconomica`, `formativo`, etc.) eliminando subcarpetas innecesarias para una estructura de archivos limpia y plana.
 4. **Desacoplamiento y Nombres Semánticos de Formularios**:
    - Nombres de archivos normalizados y descriptivos en `src/components/formularios/`.
    - Limpieza de datos quemados: todos los campos inician vacíos (`""`), con persistencia estructurada en `localStorage` y confirmación visual inmediata.
@@ -64,13 +64,7 @@ A continuación se relacionan todos los archivos intervenidos, especificando su 
 | `FormularioWizardCompleto.tsx` | `src/components/formularios/FormularioWizardCompleto.tsx` | **Creado** | Formularios | Asistente integral guiado de 10 pasos con barra de progreso interactiva. |
 | `types.ts` | `src/components/formularios/types.ts` | **Creado** | Tipado | Interfaces de TypeScript para cada módulo de la base de datos (Prisma/PostgreSQL). |
 | `formularios.ts` | `src/types/formularios.ts` | **Creado** | Tipado | Definiciones globales de estado y respuestas de caracterización. |
-| `page.tsx` (Sub-ruta Básica) | `src/app/admin/formularios/basica/page.tsx` | **Creado** | Rutas Admin | Enrutamiento directo al Módulo 1 sin errores 404. |
-| `page.tsx` (Sub-ruta Salud) | `src/app/admin/formularios/salud/page.tsx` | **Creado** | Rutas Admin | Enrutamiento directo al Módulo 2 sin errores 404. |
-| `page.tsx` (Sub-ruta Socioeconómica) | `src/app/admin/formularios/socioeconomica/page.tsx` | **Creado** | Rutas Admin | Enrutamiento directo al Módulo 3 sin errores 404. |
-| `page.tsx` (Sub-ruta Formativo) | `src/app/admin/formularios/formativo/page.tsx` | **Creado** | Rutas Admin | Enrutamiento directo al Módulo 4 sin errores 404. |
-| `page.tsx` (Sub-ruta Consentimiento) | `src/app/admin/formularios/consentimiento/page.tsx` | **Creado** | Rutas Admin | Enrutamiento directo a Consentimiento Informado sin errores 404. |
-| `page.tsx` (Sub-ruta Recaracterización) | `src/app/admin/formularios/recaracterizacion/page.tsx` | **Creado** | Rutas Admin | Enrutamiento directo a Recaracterización Semestral sin errores 404. |
-| `page.tsx` (Sub-ruta Wizard) | `src/app/admin/formularios/wizard/page.tsx` | **Creado** | Rutas Admin | Enrutamiento directo al Asistente Wizard sin errores 404. |
+| `page.tsx` (Gestión Centralizada) | `src/app/admin/formularios/page.tsx` | **Modificado** | Rutas Admin | Gestión completa de formularios unificada en un solo archivo plano sin subcarpetas, con soporte de parámetros dinámicos (`?form=...`). |
 
 ---
 

@@ -30,7 +30,7 @@ export default function FormularioConsentimiento({
     if (onContinue) {
       onContinue();
     } else {
-      router.push("/admin/formularios/basica");
+      router.push("/admin/formularios?form=basica");
     }
   };
 
