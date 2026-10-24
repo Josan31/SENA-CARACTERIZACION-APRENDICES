@@ -20,6 +20,7 @@ import FormularioSocioeconomica from "@/components/formularios/FormularioSocioec
 import FormularioFormativo from "@/components/formularios/FormularioFormativo";
 import FormularioAsesoriaDirecta from "@/components/formularios/FormularioAsesoriaDirecta";
 import Formulario10Finalizado from "@/components/formularios/Formulario10Finalizado";
+import DynamicFormRenderer from "@/components/formularios/DynamicFormRenderer";
 
 /* ──────────────────────────────────────────────────────────────────────────
    ILUSTRACIONES VECTORIALES SVG EXACTAS AL MOCKUP DEL USUARIO
@@ -383,13 +384,63 @@ function AprendizFormulariosContent() {
             </div>
           </div>
 
-          {/* Formulario Activo Renderizado */}
+          {/* Formulario Activo Renderizado Sincronizado Par en Par */}
           <main className="rounded-3xl bg-white p-4 sm:p-8 shadow-sm border border-slate-200">
-            {selectedForm === "basica" && <FormularioBasica />}
-            {selectedForm === "salud_fisica" && <FormularioSalud />}
-            {selectedForm === "salud_sexual" && <FormularioSalud />}
-            {selectedForm === "socioeconomica" && <FormularioSocioeconomica />}
-            {selectedForm === "formativo" && <FormularioFormativo />}
+            {selectedForm === "basica" && (
+              <DynamicFormRenderer
+                moduloId="basica"
+                tituloModulo="Módulo 1: Información Básica y Localización"
+                subtituloModulo="Completa o actualiza tus datos de identidad, contacto, acudiente y residencia."
+                numeroPaso="1 de 4"
+                linkVolver=""
+                textoBotonSiguiente="Guardar y Continuar a Salud"
+                onSuccess={() => setSelectedForm("salud_fisica")}
+              />
+            )}
+            {selectedForm === "salud_fisica" && (
+              <DynamicFormRenderer
+                moduloId="salud"
+                tituloModulo="Módulo 2: Salud y Condición Física"
+                subtituloModulo="Registra tu estado de salud, afiliación EPS, Sisbén y condiciones médicas."
+                numeroPaso="2 de 4"
+                linkVolver=""
+                textoBotonSiguiente="Guardar y Continuar a Socioeconómica"
+                onSuccess={() => setSelectedForm("socioeconomica")}
+              />
+            )}
+            {selectedForm === "salud_sexual" && (
+              <DynamicFormRenderer
+                moduloId="salud"
+                tituloModulo="Módulo 2: Salud Sexual y Reproductiva"
+                subtituloModulo="Información confidencial protegida por secreto profesional de bienestar."
+                numeroPaso="2 de 4"
+                linkVolver=""
+                textoBotonSiguiente="Guardar y Continuar"
+                onSuccess={() => setSelectedForm(null)}
+              />
+            )}
+            {selectedForm === "socioeconomica" && (
+              <DynamicFormRenderer
+                moduloId="socioeconomica"
+                tituloModulo="Módulo 3: Situación Socioeconómica"
+                subtituloModulo="Informa sobre tu contexto socioeconómico, composición del hogar y apoyos."
+                numeroPaso="3 de 4"
+                linkVolver=""
+                textoBotonSiguiente="Guardar y Continuar a Perfil Formativo"
+                onSuccess={() => setSelectedForm("formativo")}
+              />
+            )}
+            {selectedForm === "formativo" && (
+              <DynamicFormRenderer
+                moduloId="formativo"
+                tituloModulo="Módulo 4: Perfil Formativo y Vacunación COVID-19"
+                subtituloModulo="Actualiza tu trayectoria académica, motivaciones y esquema de vacunación biológica."
+                numeroPaso="4 de 4"
+                linkVolver=""
+                textoBotonSiguiente="Guardar y Finalizar Caracterización"
+                onSuccess={() => setSelectedForm("reportes")}
+              />
+            )}
             {selectedForm === "reportes" && (
               <Formulario10Finalizado radicado="RAD-SENA-2026-789412" />
             )}

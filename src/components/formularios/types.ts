@@ -153,3 +153,33 @@ export interface CaracterizacionCompleta {
   observaciones?: string;
   estado: "Pendiente" | "Completo" | "Recaracterizado";
 }
+
+export type TipoPregunta =
+  | "text"
+  | "textarea"
+  | "number"
+  | "select"
+  | "radio"
+  | "checkbox"
+  | "date";
+
+export interface PreguntaFormulario {
+  id: string;
+  moduloId: "basica" | "salud" | "socioeconomica" | "formativo" | string;
+  seccion: string;
+  label: string;
+  tipo: TipoPregunta;
+  placeholder?: string;
+  opciones?: string[];
+  requerido: boolean;
+  orden: number;
+  activo: boolean;
+  esPersonalizada?: boolean;
+}
+
+export interface RespuestaModuloFormulario {
+  moduloId: string;
+  respuestas: Record<string, any>;
+  fechaActualizacion: string;
+  aprendizDoc?: string;
+}

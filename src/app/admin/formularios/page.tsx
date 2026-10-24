@@ -22,6 +22,7 @@ import FormularioFormativo from "@/components/formularios/FormularioFormativo";
 import FormularioConsentimiento from "@/components/formularios/FormularioConsentimiento";
 import FormularioRecaracterizacion from "@/components/formularios/FormularioRecaracterizacion";
 import FormularioWizardCompleto from "@/components/formularios/FormularioWizardCompleto";
+import GestorPreguntasAdmin from "@/components/admin/GestorPreguntasAdmin";
 
 /* ──────────────────────────────────────────────────────────────────────────
    ILUSTRACIONES VECTORIALES SVG EXACTAS AL MOCKUP DEL ADMINISTRADOR
@@ -439,11 +440,26 @@ function AdminFormulariosContent() {
   if (selectedForm !== null) {
     const activeModule = MODULES.find((m) => m.id === selectedForm);
     const formTitle = activeModule?.title || FORM_TITLES[selectedForm] || selectedForm;
+    const formSubtitle = activeModule?.subtitle || "Gestión de preguntas y sincronización de caracterización.";
 
+    // Módulos con gestor dinámico de preguntas (añadir, modificar, quitar, sincronizar)
+    if (["basica", "salud", "socioeconomica", "formativo"].includes(selectedForm)) {
+      return (
+        <div className="flex-1 w-full bg-[#edf5f7] p-4 sm:p-6 md:p-8 font-primary">
+          <GestorPreguntasAdmin
+            moduloId={selectedForm}
+            tituloModulo={formTitle}
+            subtituloModulo={formSubtitle}
+            onVolver={() => setSelectedForm(null)}
+          />
+        </div>
+      );
+    }
+
+    // Otros módulos estándar
     return (
       <div className="flex-1 w-full bg-[#edf5f7] p-4 sm:p-6 md:p-8 font-primary">
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* Barra Superior del Editor */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm border border-slate-200">
             <button
               type="button"
@@ -454,30 +470,12 @@ function AdminFormulariosContent() {
               <span>Volver a Gestión de Formularios</span>
             </button>
 
-            <div className="flex items-center gap-3">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#008f4c] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                Editando: {formTitle}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setNotification("Plantilla de formulario guardada con éxito.");
-                  setTimeout(() => setNotification(null), 3000);
-                }}
-                className="flex items-center gap-1.5 rounded-full bg-[#00875a] hover:bg-[#00734c] text-white px-4 py-1.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
-              >
-                <Save size={13} />
-                <span>Guardar Cambios</span>
-              </button>
-            </div>
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#008f4c] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+              Visualizando: {formTitle}
+            </span>
           </div>
 
-          {/* Formulario Activo Renderizado */}
           <main className="rounded-3xl bg-white p-4 sm:p-8 shadow-sm border border-slate-200">
-            {selectedForm === "basica" && <FormularioBasica />}
-            {selectedForm === "salud" && <FormularioSalud />}
-            {selectedForm === "socioeconomica" && <FormularioSocioeconomica />}
-            {selectedForm === "formativo" && <FormularioFormativo />}
             {selectedForm === "consentimiento" && <FormularioConsentimiento />}
             {selectedForm === "recaracterizacion" && <FormularioRecaracterizacion />}
             {selectedForm === "wizard" && <FormularioWizardCompleto />}
