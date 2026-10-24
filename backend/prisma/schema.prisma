@@ -135,10 +135,11 @@ model Aprendiz {
   correoInstitucional String?  @map("correo_institucional") @db.VarChar(100)
   telefono            String?  @db.VarChar(15)
 
-  // Contacto de emergencia (integrado en aprendiz; obligatorio se exige en el form).
-  // La obligatoriedad definitiva queda pendiente de confirmación de Edwin (Fase 1).
-  contactoEmergenciaNombre       String  @map("contacto_emergencia_nombre") @db.VarChar(150)
-  contactoEmergenciaTelefono     String  @map("contacto_emergencia_telefono") @db.VarChar(15)
+  // Contacto de emergencia (integrado en aprendiz, nullable como en la propuesta
+  // aprobada; la obligatoriedad se exige en el formulario y queda pendiente de
+  // confirmación de Edwin para volver NOT NULL).
+  contactoEmergenciaNombre       String? @map("contacto_emergencia_nombre") @db.VarChar(150)
+  contactoEmergenciaTelefono     String? @map("contacto_emergencia_telefono") @db.VarChar(15)
   contactoEmergenciaParentescoId String? @map("contacto_emergencia_parentesco_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at")
