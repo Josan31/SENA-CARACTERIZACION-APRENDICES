@@ -2,55 +2,80 @@
 // SISTEMA DE CARACTERIZACIÓN DE APRENDICES - SENA
 // Esquema Relacional de Base de Datos (PostgreSQL) con Prisma ORM
 // ==============================================================================
+// SCRUM-52 Fase 2 — decisiones aprobadas por el responsable BD (2026-10-24):
+//  1. Ids con DEFAULT gen_random_uuid() en la base (PG >= 13, portable).
+//  2. directUrl para migraciones de Prisma (app usa el pooler; migraciones conex directa).
+//  3. ContactoEmergencia eliminado: el acudiente queda como campos en aprendices,
+//     incluido el parentesco con catálogo (columna nueva aprobada).
+//  4. Tablas de respuesta asociadas a caracterizacion_id (historial por versión);
+//     UNIQUE(caracterizacion_id) en las 1:1.
+//  5. Columnas fijas nuevas: régimen de salud, grupo Sisbén, tipo de discapacidad,
+//     sustento principal (jefatura), fuente de ingresos, personas a cargo,
+//     esquema de vacunación completo.
+//  6. localizacion: barrio/zona/tenencia/transporte nullable (pendiente del front).
+//  7. radicado RAD-SENA-AAAA-NNNNNN (secuencia en migración de CHECKs, se asigna
+//     cuando el estado pasa a 'completa'). UNIQUE, nullable.
+//  8. Tabla auditoria_accesos (DELETE SetNull en FKs).
+// Los CHECK y el RLS van en una migración SQL aparte (no soportados por Prisma).
+// ==============================================================================
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // conexión del pooler (la usa la app)
+  directUrl = env("DIRECT_URL") // conexión directa (la usan las migraciones de Prisma)
 }
 
 // ------------------------------------------------------------------------------
 // 1. CATÁLOGOS MAESTROS (Administrados por Bienestar al Aprendiz)
 // ------------------------------------------------------------------------------
 model Catalogo {
-  id        String  @id @default(uuid()) @db.Uuid
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   categoria String  @db.VarChar(50) // ej: 'sexo', 'jornada', 'eps', 'estrato', 'tipo_documento'
   valor     String  @db.VarChar(150) // Texto legible para el desplegable del frontend
   orden     Int?    @default(0) // Orden de visualización en formularios
   activo    Boolean @default(true) // Permite ocultar opciones obsoletas sin romper histórico
 
   // Relaciones inversas hacia las entidades consumidoras
-  fichasPrograma              Ficha[]                   @relation("FichaPrograma")
-  fichasJornada               Ficha[]                   @relation("FichaJornada")
-  fichasModalidad             Ficha[]                   @relation("FichaModalidad")
-  fichasNivel                 Ficha[]                   @relation("FichaNivel")
-  aprendicesTipoDocumento     Aprendiz[]                @relation("AprendizTipoDoc")
-  aprendicesSexo              Aprendiz[]                @relation("AprendizSexo")
-  aprendicesOrientacionSexual Aprendiz[]                @relation("AprendizOrientacionSexual")
-  aprendicesEstadoCivil       Aprendiz[]                @relation("AprendizEstadoCivil")
-  localizacionesCiudad        Localizacion[]            @relation("LocalizacionCiudad")
-  localizacionesBarrio        Localizacion[]            @relation("LocalizacionBarrio")
-  localizacionesEstrato       Localizacion[]            @relation("LocalizacionEstrato")
-  localizacionesZona          Localizacion[]            @relation("LocalizacionZona")
-  localizacionesTenencia      Localizacion[]            @relation("LocalizacionTenencia")
-  localizacionesTransporte    Localizacion[]            @relation("LocalizacionTransporte")
-  serviciosPublicos           ServicioPublico[]         @relation("ServicioTipo")
-  saludEps                    Salud[]                   @relation("SaludEps")
-  saludSexualAnticonceptivo   SaludSexualReproductiva[] @relation("AnticonceptivoMetodo")
-  parentescos                 ParentescoHogar[]         @relation("ParentescoTipo")
-  covidVacunas                Covid19[]                 @relation("CovidVacunaTipo")
-  economiaRangoIngresos       SituacionEconomica[]      @relation("EconomiaRangoIngresos")
-  economiaGrupoEtnico         SituacionEconomica[]      @relation("EconomiaGrupoEtnico")
-  poblaciones                 PoblacionReconocida[]     @relation("PoblacionTipo")
-  apoyos                      ApoyoEstado[]             @relation("ApoyoTipo")
-  situacionesHogar            SituacionHogar[]          @relation("SituacionHogarTipo")
-  problematicas               ProblematicaSector[]      @relation("ProblematicaTipo")
-  perfilNivelPrevio           PerfilOcupacional[]       @relation("PerfilNivelPrevio")
-  perfilMotivacion            PerfilOcupacional[]       @relation("PerfilMotivacion")
+  fichasPrograma               Ficha[]                   @relation("FichaPrograma")
+  fichasJornada                Ficha[]                   @relation("FichaJornada")
+  fichasModalidad              Ficha[]                   @relation("FichaModalidad")
+  fichasNivel                  Ficha[]                   @relation("FichaNivel")
+  aprendicesTipoDocumento      Aprendiz[]                @relation("AprendizTipoDoc")
+  aprendicesSexo               Aprendiz[]                @relation("AprendizSexo")
+  aprendicesOrientacionSexual  Aprendiz[]                @relation("AprendizOrientacionSexual")
+  aprendicesEstadoCivil        Aprendiz[]                @relation("AprendizEstadoCivil")
+  aprendicesContactoParentesco Aprendiz[]                @relation("AprendizContactoParentesco")
+  localizacionesCiudad         Localizacion[]            @relation("LocalizacionCiudad")
+  localizacionesBarrio         Localizacion[]            @relation("LocalizacionBarrio")
+  localizacionesEstrato        Localizacion[]            @relation("LocalizacionEstrato")
+  localizacionesZona           Localizacion[]            @relation("LocalizacionZona")
+  localizacionesTenencia       Localizacion[]            @relation("LocalizacionTenencia")
+  localizacionesTransporte     Localizacion[]            @relation("LocalizacionTransporte")
+  serviciosPublicos            ServicioPublico[]         @relation("ServicioTipo")
+  saludEps                     Salud[]                   @relation("SaludEps")
+  saludesRegimen               Salud[]                   @relation("SaludRegimen")
+  saludesSisbenEstado          Salud[]                   @relation("SaludSisbenEstado")
+  saludesGrupoSisben           Salud[]                   @relation("SaludGrupoSisben")
+  saludesTipoDiscapacidad      Salud[]                   @relation("SaludTipoDiscapacidad")
+  saludSexualAnticonceptivo    SaludSexualReproductiva[] @relation("AnticonceptivoMetodo")
+  parentescos                  ParentescoHogar[]         @relation("ParentescoTipo")
+  covidVacunas                 Covid19[]                 @relation("CovidVacunaTipo")
+  economiaRangoIngresos        SituacionEconomica[]      @relation("EconomiaRangoIngresos")
+  economiasSustento            SituacionEconomica[]      @relation("EconomiaSustentoPrincipal")
+  economiasFuenteIngresos      SituacionEconomica[]      @relation("EconomiaFuenteIngresos")
+  economiaGrupoEtnico          SituacionEconomica[]      @relation("EconomiaGrupoEtnico")
+  poblaciones                  PoblacionReconocida[]     @relation("PoblacionTipo")
+  apoyos                       ApoyoEstado[]             @relation("ApoyoTipo")
+  situacionesHogar             SituacionHogar[]          @relation("SituacionHogarTipo")
+  problematicas                ProblematicaSector[]      @relation("ProblematicaTipo")
+  perfilNivelPrevio            PerfilOcupacional[]       @relation("PerfilNivelPrevio")
+  perfilMotivacion             PerfilOcupacional[]       @relation("PerfilMotivacion")
 
+  @@unique([categoria, valor]) // R2 · texto exacto por categoría (aprobado migración 3)
   @@index([categoria])
   @@index([activo])
   @@map("catalogos")
@@ -60,7 +85,7 @@ model Catalogo {
 // 2. FICHAS DE FORMACIÓN (Dato externo proveniente de Sofía Plus / Matrícula)
 // ------------------------------------------------------------------------------
 model Ficha {
-  id                    String   @id @default(uuid()) @db.Uuid
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   numeroFicha           String   @unique @map("numero_ficha") @db.VarChar(20)
   programaId            String   @map("programa_id") @db.Uuid
   jornadaId             String   @map("jornada_id") @db.Uuid
@@ -85,7 +110,7 @@ model Ficha {
 // 3. ENFERMEDADES (Catálogo médico internacional / CIE-10)
 // ------------------------------------------------------------------------------
 model Enfermedad {
-  id          String  @id @default(uuid()) @db.Uuid
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nombre      String  @db.VarChar(150)
   codigoCie10 String? @map("codigo_cie10") @db.VarChar(10)
 
@@ -98,7 +123,7 @@ model Enfermedad {
 // 4. APRENDICES (Entidad central pivote del sistema)
 // ------------------------------------------------------------------------------
 model Aprendiz {
-  id                  String   @id @default(uuid()) @db.Uuid
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   usuario             String   @unique @db.VarChar(20) // Mismo documento de identidad
   nombreCompleto      String   @map("nombre_completo") @db.VarChar(150)
   tipoDocumentoId     String   @map("tipo_documento_id") @db.Uuid
@@ -112,21 +137,24 @@ model Aprendiz {
   correoInstitucional String?  @map("correo_institucional") @db.VarChar(100)
   telefono            String?  @db.VarChar(15)
 
-  // Contacto de emergencia (1:1 integrado en aprendiz para agilidad)
-  contactoEmergenciaNombre   String? @map("contacto_emergencia_nombre") @db.VarChar(150)
-  contactoEmergenciaTelefono String? @map("contacto_emergencia_telefono") @db.VarChar(15)
+  // Contacto de emergencia (integrado en aprendiz, nullable como en la propuesta
+  // aprobada; la obligatoriedad se exige en el formulario y queda pendiente de
+  // confirmación de Edwin para volver NOT NULL).
+  contactoEmergenciaNombre       String? @map("contacto_emergencia_nombre") @db.VarChar(150)
+  contactoEmergenciaTelefono     String? @map("contacto_emergencia_telefono") @db.VarChar(15)
+  contactoEmergenciaParentescoId String? @map("contacto_emergencia_parentesco_id") @db.Uuid
 
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime? @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Catálogos foráneos
-  tipoDocumento     Catalogo  @relation("AprendizTipoDoc", fields: [tipoDocumentoId], references: [id])
-  sexo              Catalogo  @relation("AprendizSexo", fields: [sexoId], references: [id])
-  orientacionSexual Catalogo? @relation("AprendizOrientacionSexual", fields: [orientacionSexualId], references: [id])
-  estadoCivil       Catalogo  @relation("AprendizEstadoCivil", fields: [estadoCivilId], references: [id])
+  tipoDocumento                Catalogo  @relation("AprendizTipoDoc", fields: [tipoDocumentoId], references: [id])
+  sexo                         Catalogo  @relation("AprendizSexo", fields: [sexoId], references: [id])
+  orientacionSexual            Catalogo? @relation("AprendizOrientacionSexual", fields: [orientacionSexualId], references: [id])
+  estadoCivil                  Catalogo  @relation("AprendizEstadoCivil", fields: [estadoCivilId], references: [id])
+  contactoEmergenciaParentesco Catalogo? @relation("AprendizContactoParentesco", fields: [contactoEmergenciaParentescoId], references: [id])
 
   // Relaciones satélite
-  contactosEmergencia     ContactoEmergencia[]
   aceptacionesPolitica    AceptacionPolitica[]
   localizaciones          Localizacion[]
   serviciosPublicos       ServicioPublico[]
@@ -143,6 +171,7 @@ model Aprendiz {
   perfilOcupacional       PerfilOcupacional[]
   caracterizaciones       Caracterizacion[]
   egresados               Egresado[]
+  auditorias              AuditoriaAcceso[]
 
   @@index([numeroDocumento])
   @@index([usuario])
@@ -150,28 +179,16 @@ model Aprendiz {
 }
 
 // ------------------------------------------------------------------------------
-// 5. CONTACTOS DE EMERGENCIA (Soporte relacional 1:N o respaldo del aprendiz)
-// ------------------------------------------------------------------------------
-model ContactoEmergencia {
-  id         String @id @default(uuid()) @db.Uuid
-  aprendizId String @map("aprendiz_id") @db.Uuid
-  nombre     String @db.VarChar(150)
-  telefono   String @db.VarChar(15)
-
-  aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-
-  @@index([aprendizId])
-  @@map("contactos_emergencia")
-}
-
-// ------------------------------------------------------------------------------
-// 6. ACEPTACIÓN DE POLÍTICA (Habeas Data y Confidencialidad)
+// 5. ACEPTACIÓN DE POLÍTICA (Habeas Data y Confidencialidad)
 // ------------------------------------------------------------------------------
 model AceptacionPolitica {
-  id              String   @id @default(uuid()) @db.Uuid
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   aprendizId      String   @map("aprendiz_id") @db.Uuid
   aceptado        Boolean  @default(true)
   fechaAceptacion DateTime @default(now()) @map("fecha_aceptacion")
+  // P1 aprobado: versión del texto político aceptado (ej. 'v2026-01'); nullable
+  // para el histórico que no registró versiones.
+  textoVersion    String?  @map("texto_version") @db.VarChar(20)
 
   aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
 
@@ -180,57 +197,67 @@ model AceptacionPolitica {
 }
 
 // ------------------------------------------------------------------------------
-// 7. LOCALIZACIÓN GEOGRÁFICA Y TRANSPORTE
+// 6. LOCALIZACIÓN GEOGRÁFICA Y TRANSPORTE (instantánea por caracterización)
+//    barrio_id, zona_id, tenencia_vivienda_id y medio_transporte_id son NULLABLE
+//    porque el formulario aún no los pregunta (pendiente del front, SCRUM-52).
 // ------------------------------------------------------------------------------
 model Localizacion {
-  id                 String @id @default(uuid()) @db.Uuid
-  aprendizId         String @map("aprendiz_id") @db.Uuid
-  direccion          String @db.VarChar(200)
-  ciudadId           String @map("ciudad_id") @db.Uuid
-  barrioId           String @map("barrio_id") @db.Uuid
-  estratoId          String @map("estrato_id") @db.Uuid
-  zonaId             String @map("zona_id") @db.Uuid // Urbana / Rural
-  tenenciaViviendaId String @map("tenencia_vivienda_id") @db.Uuid // Propia, arrendada, familiar
-  medioTransporteId  String @map("medio_transporte_id") @db.Uuid
+  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aprendizId         String  @map("aprendiz_id") @db.Uuid
+  caracterizacionId  String  @unique @map("caracterizacion_id") @db.Uuid
+  direccion          String  @db.VarChar(200)
+  ciudadId           String  @map("ciudad_id") @db.Uuid
+  barrioId           String? @map("barrio_id") @db.Uuid
+  estratoId          String  @map("estrato_id") @db.Uuid
+  zonaId             String? @map("zona_id") @db.Uuid // Urbana / Rural
+  tenenciaViviendaId String? @map("tenencia_vivienda_id") @db.Uuid // Propia, arrendada, familiar
+  medioTransporteId  String? @map("medio_transporte_id") @db.Uuid
 
-  aprendiz         Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  ciudad           Catalogo @relation("LocalizacionCiudad", fields: [ciudadId], references: [id])
-  barrio           Catalogo @relation("LocalizacionBarrio", fields: [barrioId], references: [id])
-  estrato          Catalogo @relation("LocalizacionEstrato", fields: [estratoId], references: [id])
-  zona             Catalogo @relation("LocalizacionZona", fields: [zonaId], references: [id])
-  tenenciaVivienda Catalogo @relation("LocalizacionTenencia", fields: [tenenciaViviendaId], references: [id])
-  medioTransporte  Catalogo @relation("LocalizacionTransporte", fields: [medioTransporteId], references: [id])
+  aprendiz         Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion  Caracterizacion @relation("LocalizacionCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  ciudad           Catalogo        @relation("LocalizacionCiudad", fields: [ciudadId], references: [id])
+  barrio           Catalogo?       @relation("LocalizacionBarrio", fields: [barrioId], references: [id])
+  estrato          Catalogo        @relation("LocalizacionEstrato", fields: [estratoId], references: [id])
+  zona             Catalogo?       @relation("LocalizacionZona", fields: [zonaId], references: [id])
+  tenenciaVivienda Catalogo?       @relation("LocalizacionTenencia", fields: [tenenciaViviendaId], references: [id])
+  medioTransporte  Catalogo?       @relation("LocalizacionTransporte", fields: [medioTransporteId], references: [id])
 
   @@index([aprendizId])
   @@map("localizacion")
 }
 
 // ------------------------------------------------------------------------------
-// 8. SERVICIOS PÚBLICOS DEL HOGAR (Multivalor: Agua, Gas, Luz, Internet, etc.)
+// 7. SERVICIOS PÚBLICOS DEL HOGAR (Multivalor: Agua, Gas, Luz, Internet, etc.)
 // ------------------------------------------------------------------------------
 model ServicioPublico {
-  id            String  @id @default(uuid()) @db.Uuid
-  aprendizId    String  @map("aprendiz_id") @db.Uuid
-  servicioId    String  @map("servicio_id") @db.Uuid
-  tieneServicio Boolean @map("tiene_servicio")
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aprendizId        String  @map("aprendiz_id") @db.Uuid
+  caracterizacionId String  @map("caracterizacion_id") @db.Uuid
+  servicioId        String  @map("servicio_id") @db.Uuid
+  tieneServicio     Boolean @map("tiene_servicio")
 
-  aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  servicio Catalogo @relation("ServicioTipo", fields: [servicioId], references: [id])
+  aprendiz        Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion Caracterizacion @relation("ServicioPublicoCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  servicio        Catalogo        @relation("ServicioTipo", fields: [servicioId], references: [id])
 
   @@index([aprendizId])
+  @@index([caracterizacionId])
   @@map("servicios_publicos")
 }
 
 // ------------------------------------------------------------------------------
-// 9. FORMACIÓN (Vínculo Aprendiz con su Ficha)
+// 8. FORMACIÓN (Vínculo Aprendiz con su Ficha, instantánea por caracterización:
+//    el wizard captura la matrícula vigente en cada versión)
 // ------------------------------------------------------------------------------
 model Formacion {
-  id         String @id @default(uuid()) @db.Uuid
-  aprendizId String @map("aprendiz_id") @db.Uuid
-  fichaId    String @map("ficha_id") @db.Uuid
+  id                String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aprendizId        String @map("aprendiz_id") @db.Uuid
+  caracterizacionId String @unique @map("caracterizacion_id") @db.Uuid
+  fichaId           String @map("ficha_id") @db.Uuid
 
-  aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  ficha    Ficha    @relation(fields: [fichaId], references: [id])
+  aprendiz        Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion Caracterizacion @relation("FormacionCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  ficha           Ficha           @relation(fields: [fichaId], references: [id])
 
   @@index([aprendizId])
   @@index([fichaId])
@@ -238,14 +265,20 @@ model Formacion {
 }
 
 // ------------------------------------------------------------------------------
-// 10. SALUD (Información Sensible y Afectaciones Médicas)
+// 9. SALUD (Información Sensible y Afectaciones Médicas)
+//    Columnas fijas aprobadas: régimen de salud, grupo Sisbén y tipo de
+//    discapacidad con catálogo. sisben_estado_id (cat. 'sisben_estado') guarda
+//    "Sí" / "No" / "En trámite" (decisión P2).
 // ------------------------------------------------------------------------------
 model Salud {
-  id                          String  @id @default(uuid()) @db.Uuid
+  id                          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   aprendizId                  String  @map("aprendiz_id") @db.Uuid
+  caracterizacionId           String  @unique @map("caracterizacion_id") @db.Uuid
   afiliadoSalud               Boolean @map("afiliado_salud")
   epsId                       String  @map("eps_id") @db.Uuid
-  sisben                      Boolean
+  regimenSaludId              String  @map("regimen_salud_id") @db.Uuid
+  sisbenEstadoId              String  @map("sisben_estado_id") @db.Uuid // 'Sí'|'No'|'En trámite' (P2)
+  grupoSisbenId               String? @map("grupo_sisben_id") @db.Uuid
   enfermedadId                String? @map("enfermedad_id") @db.Uuid
   enfermedadOtra              String? @map("enfermedad_otra") @db.VarChar(150)
   trastornoMental             Boolean @default(false) @map("trastorno_mental")
@@ -255,6 +288,7 @@ model Salud {
   medicamentoDetalle          String? @map("medicamento_detalle") @db.VarChar(150)
   discapacidadCertificada     Boolean @default(false) @map("discapacidad_certificada")
   presentaDiscapacidad        Boolean @default(false) @map("presenta_discapacidad")
+  tipoDiscapacidadId          String? @map("tipo_discapacidad_id") @db.Uuid
   discapacidadDetalle         String? @map("discapacidad_detalle") @db.VarChar(150)
   alergia                     Boolean @default(false)
   alergiaDetalle              String? @map("alergia_detalle") @db.VarChar(150)
@@ -262,193 +296,256 @@ model Salud {
   medicamentoPermanente       Boolean @default(false) @map("medicamento_permanente")
   medicamentoPermanenteNombre String? @map("medicamento_permanente_nombre") @db.VarChar(150)
 
-  aprendiz   Aprendiz    @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  eps        Catalogo    @relation("SaludEps", fields: [epsId], references: [id])
-  enfermedad Enfermedad? @relation(fields: [enfermedadId], references: [id])
+  aprendiz         Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion  Caracterizacion @relation("SaludCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  eps              Catalogo        @relation("SaludEps", fields: [epsId], references: [id])
+  regimenSalud     Catalogo        @relation("SaludRegimen", fields: [regimenSaludId], references: [id])
+  sisbenEstado     Catalogo        @relation("SaludSisbenEstado", fields: [sisbenEstadoId], references: [id])
+  grupoSisben      Catalogo?       @relation("SaludGrupoSisben", fields: [grupoSisbenId], references: [id])
+  tipoDiscapacidad Catalogo?       @relation("SaludTipoDiscapacidad", fields: [tipoDiscapacidadId], references: [id])
+  enfermedad       Enfermedad?     @relation(fields: [enfermedadId], references: [id])
 
   @@index([aprendizId])
   @@map("salud")
 }
 
 // ------------------------------------------------------------------------------
-// 11. SALUD SEXUAL Y REPRODUCTIVA (Información Altamente Sensible)
+// 10. SALUD SEXUAL Y REPRODUCTIVA (Información Altamente Sensible)
+//     NULL = "No aplica" / "Prefiero no responder" SOLO en preguntas
+//     condicionales (gestación, semana de gestación, lactancia, anticonceptivos).
 // ------------------------------------------------------------------------------
 model SaludSexualReproductiva {
-  id                     String  @id @default(uuid()) @db.Uuid
-  aprendizId             String  @map("aprendiz_id") @db.Uuid
-  enGestacion            Boolean @default(false) @map("en_gestacion")
-  semanaGestacion        Int?    @map("semana_gestacion")
-  enLactancia            Boolean @default(false) @map("en_lactancia")
-  cabezaFamilia          Boolean @default(false) @map("cabeza_familia")
-  numHijos               Int     @default(0) @map("num_hijos")
-  numPersonasHogar       Int     @default(1) @map("num_personas_hogar")
-  metodoAnticonceptivoId String? @map("metodo_anticonceptivo_id") @db.Uuid
-  anticonceptivoDetalle  String? @map("anticonceptivo_detalle") @db.VarChar(150)
-  deseaAsesoria          Boolean @default(false) @map("desea_asesoria")
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aprendizId             String   @map("aprendiz_id") @db.Uuid
+  caracterizacionId      String   @unique @map("caracterizacion_id") @db.Uuid
+  enGestacion            Boolean? @map("en_gestacion") // NULL = no aplica
+  semanaGestacion        Int?     @map("semana_gestacion") // solo si en_gestacion = true (CHECK en migración)
+  enLactancia            Boolean? @map("en_lactancia") // NULL = no aplica
+  cabezaFamilia          Boolean  @default(false) @map("cabeza_familia")
+  numHijos               Int      @default(0) @map("num_hijos")
+  numPersonasHogar       Int      @default(1) @map("num_personas_hogar")
+  metodoAnticonceptivoId String?  @map("metodo_anticonceptivo_id") @db.Uuid // NULL = no usa / no aplica
+  anticonceptivoDetalle  String?  @map("anticonceptivo_detalle") @db.VarChar(150)
+  deseaAsesoria          Boolean  @default(false) @map("desea_asesoria")
 
-  aprendiz             Aprendiz  @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  metodoAnticonceptivo Catalogo? @relation("AnticonceptivoMetodo", fields: [metodoAnticonceptivoId], references: [id])
+  aprendiz             Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion      Caracterizacion @relation("SaludSexualCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  metodoAnticonceptivo Catalogo?       @relation("AnticonceptivoMetodo", fields: [metodoAnticonceptivoId], references: [id])
 
   @@index([aprendizId])
   @@map("salud_sexual_reproductiva")
 }
 
 // ------------------------------------------------------------------------------
-// 12. PARENTESCOS DEL HOGAR (Multivalor: Madre, Padre, Hijos, Abuelos, etc.)
+// 11. PARENTESCOS DEL HOGAR (Multivalor: Madre, Padre, Hijos, Abuelos, etc.)
 // ------------------------------------------------------------------------------
 model ParentescoHogar {
-  id           String @id @default(uuid()) @db.Uuid
-  aprendizId   String @map("aprendiz_id") @db.Uuid
-  parentescoId String @map("parentesco_id") @db.Uuid
+  id                String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aprendizId        String @map("aprendiz_id") @db.Uuid
+  caracterizacionId String @map("caracterizacion_id") @db.Uuid
+  parentescoId      String @map("parentesco_id") @db.Uuid
 
-  aprendiz   Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  parentesco Catalogo @relation("ParentescoTipo", fields: [parentescoId], references: [id])
+  aprendiz        Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion Caracterizacion @relation("ParentescoCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  parentesco      Catalogo        @relation("ParentescoTipo", fields: [parentescoId], references: [id])
 
   @@index([aprendizId])
+  @@index([caracterizacionId])
   @@map("parentescos_hogar")
 }
 
 // ------------------------------------------------------------------------------
-// 13. COVID-19 (Esquema de Vacunación)
+// 12. COVID-19 (Esquema de Vacunación) — columna fija nueva: esquema_completo
 // ------------------------------------------------------------------------------
 model Covid19 {
-  id         String  @id @default(uuid()) @db.Uuid
-  aprendizId String  @map("aprendiz_id") @db.Uuid
-  vacunado   Boolean
-  vacunaId   String? @map("vacuna_id") @db.Uuid
-  dosis      Int?
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aprendizId        String  @map("aprendiz_id") @db.Uuid
+  caracterizacionId String  @unique @map("caracterizacion_id") @db.Uuid
+  vacunado          Boolean
+  vacunaId          String? @map("vacuna_id") @db.Uuid
+  dosis             Int?    @map("dosis")
+  esquemaCompleto   Boolean @default(false) @map("esquema_completo")
 
-  aprendiz Aprendiz  @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  vacuna   Catalogo? @relation("CovidVacunaTipo", fields: [vacunaId], references: [id])
+  aprendiz        Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion Caracterizacion @relation("Covid19Caracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  vacuna          Catalogo?       @relation("CovidVacunaTipo", fields: [vacunaId], references: [id])
 
   @@index([aprendizId])
   @@map("covid19")
 }
 
 // ------------------------------------------------------------------------------
-// 14. SITUACIÓN ECONÓMICA Y GRUPO ÉTNICO
+// 13. SITUACIÓN ECONÓMICA Y GRUPO ÉTNICO
+//     sustento_principal_id = "quié aporta el mayor sustento" (jefaturaHogar);
+//     jefe_hogar y sostiene_hogar se reutilizan como banderas derivadas del
+//     sustento (true cuando el aportante es el propio aprendiz), ver CONTRATO_DATOS.
 // ------------------------------------------------------------------------------
 model SituacionEconomica {
-  id              String  @id @default(uuid()) @db.Uuid
-  aprendizId      String  @map("aprendiz_id") @db.Uuid
-  jefeHogar       Boolean @map("jefe_hogar")
-  sostieneHogar   Boolean @map("sostiene_hogar")
-  rangoIngresosId String  @map("rango_ingresos_id") @db.Uuid
-  grupoEtnicoId   String  @map("grupo_etnico_id") @db.Uuid
+  id                  String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aprendizId          String  @map("aprendiz_id") @db.Uuid
+  caracterizacionId   String  @unique @map("caracterizacion_id") @db.Uuid
+  jefeHogar           Boolean @map("jefe_hogar") // derivado del sustento
+  sostieneHogar       Boolean @map("sostiene_hogar") // derivado del sustento
+  sustentoPrincipalId String  @map("sustento_principal_id") @db.Uuid
+  personasACargo      Int     @default(0) @map("personas_a_cargo")
+  rangoIngresosId     String  @map("rango_ingresos_id") @db.Uuid
+  fuenteIngresosId    String  @map("fuente_ingresos_id") @db.Uuid
+  grupoEtnicoId       String  @map("grupo_etnico_id") @db.Uuid
 
-  aprendiz      Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  rangoIngresos Catalogo @relation("EconomiaRangoIngresos", fields: [rangoIngresosId], references: [id])
-  grupoEtnico   Catalogo @relation("EconomiaGrupoEtnico", fields: [grupoEtnicoId], references: [id])
+  aprendiz          Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion   Caracterizacion @relation("SituacionEconomicaCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  sustentoPrincipal Catalogo        @relation("EconomiaSustentoPrincipal", fields: [sustentoPrincipalId], references: [id])
+  rangoIngresos     Catalogo        @relation("EconomiaRangoIngresos", fields: [rangoIngresosId], references: [id])
+  fuenteIngresos    Catalogo        @relation("EconomiaFuenteIngresos", fields: [fuenteIngresosId], references: [id])
+  grupoEtnico       Catalogo        @relation("EconomiaGrupoEtnico", fields: [grupoEtnicoId], references: [id])
 
   @@index([aprendizId])
   @@map("situacion_economica")
 }
 
 // ------------------------------------------------------------------------------
-// 15. POBLACIONES RECONOCIDAS (Multivalor: Desplazado, Víctima, Afro, etc.)
+// 14. POBLACIONES RECONOCIDAS (Multivalor: Desplazado, Víctima, Afro, etc.)
 // ------------------------------------------------------------------------------
 model PoblacionReconocida {
-  id          String @id @default(uuid()) @db.Uuid
-  aprendizId  String @map("aprendiz_id") @db.Uuid
-  poblacionId String @map("poblacion_id") @db.Uuid
+  id                String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aprendizId        String @map("aprendiz_id") @db.Uuid
+  caracterizacionId String @map("caracterizacion_id") @db.Uuid
+  poblacionId       String @map("poblacion_id") @db.Uuid
 
-  aprendiz  Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  poblacion Catalogo @relation("PoblacionTipo", fields: [poblacionId], references: [id])
+  aprendiz        Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion Caracterizacion @relation("PoblacionCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  poblacion       Catalogo        @relation("PoblacionTipo", fields: [poblacionId], references: [id])
 
   @@index([aprendizId])
+  @@index([caracterizacionId])
   @@map("poblaciones_reconocidas")
 }
 
 // ------------------------------------------------------------------------------
-// 16. APOYOS DEL ESTADO (Multivalor: Jóvenes en Acción, Renta Ciudadana, etc.)
+// 15. APOYOS DEL ESTADO (Multivalor: Jóvenes en Acción, Renta Ciudadana, etc.)
 // ------------------------------------------------------------------------------
 model ApoyoEstado {
-  id          String  @id @default(uuid()) @db.Uuid
-  aprendizId  String  @map("aprendiz_id") @db.Uuid
-  tipoApoyoId String  @map("tipo_apoyo_id") @db.Uuid
-  detalleOtra String? @map("detalle_otra") @db.VarChar(150)
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aprendizId        String  @map("aprendiz_id") @db.Uuid
+  caracterizacionId String  @map("caracterizacion_id") @db.Uuid
+  tipoApoyoId       String  @map("tipo_apoyo_id") @db.Uuid
+  detalleOtra       String? @map("detalle_otra") @db.VarChar(150)
 
-  aprendiz  Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  tipoApoyo Catalogo @relation("ApoyoTipo", fields: [tipoApoyoId], references: [id])
+  aprendiz        Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion Caracterizacion @relation("ApoyoCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  tipoApoyo       Catalogo        @relation("ApoyoTipo", fields: [tipoApoyoId], references: [id])
 
   @@index([aprendizId])
+  @@index([caracterizacionId])
   @@map("apoyos_estado")
 }
 
 // ------------------------------------------------------------------------------
-// 17. SITUACIONES DEL HOGAR (Multivalor Sensible: Violencia, Desempleo, etc.)
+// 16. SITUACIONES DEL HOGAR (Multivalor Sensible: Violencia, Desempleo, etc.)
 // ------------------------------------------------------------------------------
 model SituacionHogar {
-  id          String @id @default(uuid()) @db.Uuid
-  aprendizId  String @map("aprendiz_id") @db.Uuid
-  situacionId String @map("situacion_id") @db.Uuid
+  id                String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aprendizId        String @map("aprendiz_id") @db.Uuid
+  caracterizacionId String @map("caracterizacion_id") @db.Uuid
+  situacionId       String @map("situacion_id") @db.Uuid
 
-  aprendiz  Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  situacion Catalogo @relation("SituacionHogarTipo", fields: [situacionId], references: [id])
+  aprendiz        Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion Caracterizacion @relation("SituacionHogarCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  situacion       Catalogo        @relation("SituacionHogarTipo", fields: [situacionId], references: [id])
 
   @@index([aprendizId])
+  @@index([caracterizacionId])
   @@map("situaciones_hogar")
 }
 
 // ------------------------------------------------------------------------------
-// 18. PROBLEMÁTICAS DEL SECTOR (Multivalor: Seguridad, Vías, Inundaciones, etc.)
+// 17. PROBLEMÁTICAS DEL SECTOR (Multivalor: Seguridad, Vías, Inundaciones, etc.)
 // ------------------------------------------------------------------------------
 model ProblematicaSector {
-  id             String @id @default(uuid()) @db.Uuid
-  aprendizId     String @map("aprendiz_id") @db.Uuid
-  problematicaId String @map("problematica_id") @db.Uuid
+  id                String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aprendizId        String @map("aprendiz_id") @db.Uuid
+  caracterizacionId String @map("caracterizacion_id") @db.Uuid
+  problematicaId    String @map("problematica_id") @db.Uuid
 
-  aprendiz     Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  problematica Catalogo @relation("ProblematicaTipo", fields: [problematicaId], references: [id])
+  aprendiz        Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion Caracterizacion @relation("ProblematicaCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  problematica    Catalogo        @relation("ProblematicaTipo", fields: [problematicaId], references: [id])
 
   @@index([aprendizId])
+  @@index([caracterizacionId])
   @@map("problematicas_sector")
 }
 
 // ------------------------------------------------------------------------------
-// 19. PERFIL OCUPACIONAL Y LABORAL
+// 18. PERFIL OCUPACIONAL Y LABORAL
+//     Expectativa laboral y manejo de herramientas digitales NO tienen columna:
+//     van a las tablas dinámicas (diseño en docs, sin migración en esta fase).
 // ------------------------------------------------------------------------------
 model PerfilOcupacional {
-  id                     String  @id @default(uuid()) @db.Uuid
+  id                     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   aprendizId             String  @map("aprendiz_id") @db.Uuid
+  caracterizacionId      String  @unique @map("caracterizacion_id") @db.Uuid
   nivelFormacionPrevioId String  @map("nivel_formacion_previo_id") @db.Uuid
   formacionPreviaSena    Boolean @map("formacion_previa_sena")
   motivacionId           String  @map("motivacion_id") @db.Uuid
   trabajaActualmente     Boolean @map("trabaja_actualmente")
   lugarHorarioTrabajo    String? @map("lugar_horario_trabajo") @db.VarChar(150)
 
-  aprendiz             Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
-  nivelFormacionPrevio Catalogo @relation("PerfilNivelPrevio", fields: [nivelFormacionPrevioId], references: [id])
-  motivacion           Catalogo @relation("PerfilMotivacion", fields: [motivacionId], references: [id])
+  aprendiz             Aprendiz        @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+  caracterizacion      Caracterizacion @relation("PerfilCaracterizacion", fields: [caracterizacionId], references: [id], onDelete: Cascade)
+  nivelFormacionPrevio Catalogo        @relation("PerfilNivelPrevio", fields: [nivelFormacionPrevioId], references: [id])
+  motivacion           Catalogo        @relation("PerfilMotivacion", fields: [motivacionId], references: [id])
 
   @@index([aprendizId])
   @@map("perfil_ocupacional")
 }
 
 // ------------------------------------------------------------------------------
-// 20. CARACTERIZACIONES (Cabecera Versionada para Recaracterización Periódica)
+// 19. CARACTERIZACIONES (Cabecera Versionada para Recaracterización Periódica)
+//     radicado RAD-SENA-AAAA-NNNNNN: se asigna cuando estado pasa a 'completa'
+//     (formato provisional pendiente de confirmación con Edwin).
 // ------------------------------------------------------------------------------
 model Caracterizacion {
-  id         String   @id @default(uuid()) @db.Uuid
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   aprendizId String   @map("aprendiz_id") @db.Uuid
+  radicado   String?  @unique @db.VarChar(24) // NULL mientras esté en_curso
   fecha      DateTime @db.Date
-  version    Int      @default(1) // Soporta actualización cada 6-7 meses sin perder histórico
+  version    Int      @default(1) // v1..n por aprendiz (recaracterización 6-7 meses)
   estado     String   @db.VarChar(20) // en_curso, completa, pendiente_actualizar
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   aprendiz Aprendiz @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
 
+  // Dinámica: inversas de las tablas de respuestas (mayoría 1:1)
+  localizaciones     Localizacion[]            @relation("LocalizacionCaracterizacion")
+  serviciosPublicos  ServicioPublico[]         @relation("ServicioPublicoCaracterizacion")
+  formaciones        Formacion[]               @relation("FormacionCaracterizacion")
+  saludes            Salud[]                   @relation("SaludCaracterizacion")
+  saludesSexuales    SaludSexualReproductiva[] @relation("SaludSexualCaracterizacion")
+  parentescosHogar   ParentescoHogar[]         @relation("ParentescoCaracterizacion")
+  covids19           Covid19[]                 @relation("Covid19Caracterizacion")
+  situaciones        SituacionEconomica[]      @relation("SituacionEconomicaCaracterizacion")
+  poblaciones        PoblacionReconocida[]     @relation("PoblacionCaracterizacion")
+  apoyos             ApoyoEstado[]             @relation("ApoyoCaracterizacion")
+  situacionesDeHogar SituacionHogar[]          @relation("SituacionHogarCaracterizacion")
+  problematicas      ProblematicaSector[]      @relation("ProblematicaCaracterizacion")
+  perfiles           PerfilOcupacional[]       @relation("PerfilCaracterizacion")
+
+  @@unique([aprendizId, version]) // una sola versión N por aprendiz (aprobado migración 3)
   @@index([aprendizId])
   @@index([estado])
   @@map("caracterizaciones")
 }
 
 // ------------------------------------------------------------------------------
-// 21. EGRESADOS (Trazabilidad y Estado de Culminación)
+// 20. EGRESADOS (Trazabilidad y Estado de Culminación)
+//     Sin caracterizacion_id: registra un cambio de ciclo de vida del aprendiz
+//     con fecha propia; no es dato de respuesta de la caracterización.
 // ------------------------------------------------------------------------------
 model Egresado {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   aprendizId  String    @map("aprendiz_id") @db.Uuid
   fechaEgreso DateTime? @map("fecha_egreso") @db.Date
   estado      String?   @db.VarChar(20)
@@ -461,17 +558,19 @@ model Egresado {
 }
 
 // ------------------------------------------------------------------------------
-// 22. USUARIOS Y CONTROL DE ACCESO (Personal SENA y Matriz de Permisos RBAC)
+// 21. USUARIOS Y CONTROL DE ACCESO (Personal SENA y Matriz de Permisos RBAC)
 // ------------------------------------------------------------------------------
 model Usuario {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nombre    String   @db.VarChar(150)
   correo    String   @unique @db.VarChar(100)
-  password  String   @db.VarChar(255)
+  password  String   @db.VarChar(255) // SOLO el hash (bcrypt/argon2/scrypt), nunca texto plano
   rol       String   @db.VarChar(30) // lider_bienestar, direccion_regional, coordinacion, calidad, admin
   activo    Boolean  @default(true)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  auditorias AuditoriaAcceso[]
 
   @@index([correo])
   @@index([rol])
@@ -479,11 +578,34 @@ model Usuario {
 }
 
 model RolPermiso {
-  id          String @id @default(uuid()) @db.Uuid
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   rol         String @db.VarChar(30)
   modulo      String @db.VarChar(50) // salud, situacion_economica, reportes, catalogos, etc.
   nivelAcceso String @map("nivel_acceso") @db.VarChar(20) // lectura, escritura, ninguno
 
   @@unique([rol, modulo])
   @@map("roles_permisos")
+}
+
+// ------------------------------------------------------------------------------
+// 22. AUDITORÍA DE ACCESOS (quién consultó o modificó qué, y cuándo)
+// Lo exigirá Seguridad de la Información por los datos sensibles
+// (salud, salud sexual, sustancias, LGTBI, ingresos).
+// ------------------------------------------------------------------------------
+model AuditoriaAcceso {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId  String?  @map("usuario_id") @db.Uuid // funcionario SENA que hizo la acción
+  aprendizId String?  @map("aprendiz_id") @db.Uuid // aprendiz afectado
+  accion     String   @db.VarChar(20) // consultar, crear, modificar, eliminar, exportar
+  tabla      String   @db.VarChar(50) // módulo o tabla consultada (ej: salud)
+  detalle    String?  @db.VarChar(255)
+  fecha      DateTime @default(now())
+
+  usuario  Usuario?  @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  aprendiz Aprendiz? @relation(fields: [aprendizId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId])
+  @@index([aprendizId])
+  @@index([fecha])
+  @@map("auditoria_accesos")
 }
