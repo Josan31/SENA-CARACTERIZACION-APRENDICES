@@ -489,7 +489,7 @@ async function main() {
       }
       await crearAprendizDemo(tx, mapa, a);
       console.log(`>> Aprendiz demo creado: ${a.nombre} (${a.documento})`);
-    });
+    }, { maxWait: 10000, timeout: 60000 }); // Supabase remoto: el default de 5 s expira con P2028
   }
 
   const conteo = {
