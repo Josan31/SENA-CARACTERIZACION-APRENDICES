@@ -1,22 +1,23 @@
 "use client";
 
+import { authenticate } from "@/lib/users";
 import {
-  ArrowRight,
-  ClipboardList,
-  CreditCard,
-  Eye,
-  EyeOff,
-  Hash,
-  IdCard,
-  Lock,
-  LogIn,
-  MessageSquare,
-  UserCheck,
+    ArrowRight,
+    ClipboardList,
+    CreditCard,
+    Eye,
+    EyeOff,
+    Hash,
+    IdCard,
+    Lock,
+    LogIn,
+    MessageSquare,
+    UserCheck,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { authenticate } from "@/lib/users";
 
 /* ─────────────────────────────────────────────────────────
    Opciones de Tipo de Documento SENA
@@ -375,19 +376,12 @@ export default function LoginPage() {
                 </span>
               </label>
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (docNumber.trim().toLowerCase().includes("admin")) {
-                    setPassword("12345");
-                  } else {
-                    setPassword("123456");
-                  }
-                }}
-                className="text-xs cursor-pointer sm:text-sm font-semibold text-sena-green hover:underline whitespace-nowrap"
+              <Link
+                href="/forgot-password"
+                className="text-xs sm:text-sm font-semibold text-sena-green hover:underline whitespace-nowrap"
               >
-                ¿Sin contraseña?
-              </button>
+                Olvidé mi contraseña
+              </Link>
             </div>
 
             {error && (

@@ -1,4 +1,5 @@
 import Sidebar from "@/components/admin/Sidebar";
+import DashboardHeader from "@/components/admin/DashboardHeader";
 
 export default function AdminLayout({
   children,
@@ -12,6 +13,8 @@ export default function AdminLayout({
 
       {/* Área principal desplazable de contenido */}
       <main className="flex flex-1 flex-col overflow-y-auto">
+        {/* Header compartido en todas las páginas del panel admin */}
+        <DashboardHeader />
         {children}
       </main>
     </div>

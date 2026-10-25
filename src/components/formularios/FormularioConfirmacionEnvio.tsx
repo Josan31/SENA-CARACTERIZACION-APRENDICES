@@ -1,23 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  ArrowRight,
   Check,
   CheckCircle2,
   FileCheck2,
   GraduationCap,
   HeartPulse,
   Lock,
-  MapPin,
   Send,
-  ShieldCheck,
   User,
   Wallet,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 
 export interface FormularioConfirmacionEnvioProps {
   onBack?: () => void;
@@ -48,7 +44,7 @@ export default function FormularioConfirmacionEnvio({
   const [veracidadAceptada, setVeracidadAceptada] = useState(true);
   const [habeasDataAceptado, setHabeasDataAceptado] = useState(true);
   const [observaciones, setObservaciones] = useState(
-    "Requiero apoyo con beneficio de transporte municipal para asistir a jornada diurna."
+    "Requiero apoyo con beneficio de transporte municipal para asistir a jornada diurna.",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -129,7 +125,8 @@ export default function FormularioConfirmacionEnvio({
               Confirmación, Declaración Jurada y Envío
             </h1>
             <p className="text-xs text-slate-500 font-medium">
-              Verifica cuidadosamente toda la información antes de radicar formalmente tu encuesta.
+              Verifica cuidadosamente toda la información antes de radicar
+              formalmente tu encuesta.
             </p>
           </div>
         </div>
@@ -158,8 +155,8 @@ export default function FormularioConfirmacionEnvio({
                       isCompleted
                         ? "bg-sena-green text-white"
                         : isActive
-                        ? "bg-[#0077b6] text-white ring-4 ring-[#0077b6]/20 font-extrabold"
-                        : "bg-slate-200 text-slate-500"
+                          ? "bg-[#0077b6] text-white ring-4 ring-[#0077b6]/20 font-extrabold"
+                          : "bg-slate-200 text-slate-500"
                     }`}
                   >
                     {isCompleted ? <Check size={12} strokeWidth={3} /> : s.step}
@@ -183,10 +180,12 @@ export default function FormularioConfirmacionEnvio({
         {/* Logomarca SENA */}
         <div className="hidden xl:flex flex-col items-end pl-4 border-l border-slate-200">
           <span className="text-lg font-black text-sena-green leading-none">
-            SENA
+            SENAQQ
           </span>
           <span className="text-[8px] font-semibold text-sena-navy text-right leading-tight mt-1">
-            Tecnología e innovación<br />para un mejor país
+            Tecnología e innovación
+            <br />
+            para un mejor país
           </span>
           <div className="h-0.5 w-8 bg-sena-green mt-1 rounded-full" />
         </div>
@@ -203,7 +202,8 @@ export default function FormularioConfirmacionEnvio({
               Revisión Consolidada de Caracterización
             </h2>
             <p className="text-xs text-slate-500">
-              Por favor revisa la exactitud de tus datos en cada sección. Puedes volver atrás si necesitas corregir algo.
+              Por favor revisa la exactitud de tus datos en cada sección. Puedes
+              volver atrás si necesitas corregir algo.
             </p>
           </div>
         </div>
@@ -233,7 +233,9 @@ export default function FormularioConfirmacionEnvio({
               </div>
               <div className="flex justify-between">
                 <strong className="text-sena-navy">Contacto:</strong>
-                <span>{data.correo} | {data.telefono}</span>
+                <span>
+                  {data.correo} | {data.telefono}
+                </span>
               </div>
               <div className="flex justify-between">
                 <strong className="text-sena-navy">Acudiente:</strong>
@@ -341,7 +343,9 @@ export default function FormularioConfirmacionEnvio({
                 Declaración de Veracidad de la Información *
               </span>
               <span className="text-emerald-800 text-[11px] leading-relaxed">
-                Declaro bajo la gravedad de juramento que todos los datos suministrados en los módulos de esta encuesta son fidedignos y representan mi situación real.
+                Declaro bajo la gravedad de juramento que todos los datos
+                suministrados en los módulos de esta encuesta son fidedignos y
+                representan mi situación real.
               </span>
             </div>
           </label>
@@ -355,10 +359,13 @@ export default function FormularioConfirmacionEnvio({
             />
             <div className="text-xs">
               <span className="font-bold text-emerald-950 block">
-                Autorización de Tratamiento de Datos Personales (Ley 1581 de 2012) *
+                Autorización de Tratamiento de Datos Personales (Ley 1581 de
+                2012) *
               </span>
               <span className="text-emerald-800 text-[11px] leading-relaxed">
-                Autorizo al SENA y a Bienestar al Aprendiz a procesar mis datos para la planeación institucional y asignación de beneficios socioeconómicos.
+                Autorizo al SENA y a Bienestar al Aprendiz a procesar mis datos
+                para la planeación institucional y asignación de beneficios
+                socioeconómicos.
               </span>
             </div>
           </label>
@@ -405,7 +412,9 @@ export default function FormularioConfirmacionEnvio({
               onClick={handleSubmit}
               className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#007796] to-sena-green px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-sena-green/25 hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
-              <span>{isSubmitting ? "Radicando..." : "Confirmar y Enviar"}</span>
+              <span>
+                {isSubmitting ? "Radicando..." : "Confirmar y Enviar"}
+              </span>
               <Send size={14} />
             </button>
           </div>
@@ -423,8 +432,12 @@ export default function FormularioConfirmacionEnvio({
               ¡Caracterización Radicada con Éxito!
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Tu encuesta ha sido recibida y registrada con el número de radicado oficial{" "}
-              <strong className="text-sena-green-dark">RAD-SENA-2026-789412</strong>. Puedes descargar tu comprobante a continuación.
+              Tu encuesta ha sido recibida y registrada con el número de
+              radicado oficial{" "}
+              <strong className="text-sena-green-dark">
+                RAD-SENA-2026-789412
+              </strong>
+              . Puedes descargar tu comprobante a continuación.
             </p>
             <button
               type="button"

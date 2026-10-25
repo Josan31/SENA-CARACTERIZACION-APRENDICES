@@ -1,15 +1,14 @@
-import DashboardHeader from "@/components/admin/DashboardHeader";
+import DateBadge from "@/components/admin/DateBadge";
 import {
-  ArrowRight,
-  BarChart2,
-  Calendar,
-  ClipboardCheck,
-  ClipboardList,
-  ClipboardX,
-  User,
-  UserRound,
-  Users,
-  Zap,
+    ArrowRight,
+    BarChart2,
+    ClipboardCheck,
+    ClipboardList,
+    ClipboardX,
+    User,
+    UserRound,
+    Users,
+    Zap
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -218,7 +217,6 @@ export function QuickActionsSection() {
 export default function AdminHomePage() {
   return (
     <>
-      <DashboardHeader />
 
       <div className="flex-1 space-y-8 p-8">
         {/* ── Page Header / Welcome Text ── */}
@@ -248,18 +246,7 @@ export default function AdminHomePage() {
           {/* ── Right side widgets ── */}
           <div className="flex flex-col items-start sm:items-end gap-3">
             {/* Date chip */}
-            <div className="flex items-center gap-3 rounded-2xl bg-white border border-gray-100 p-1.5 pr-5 text-sm font-bold text-sena-navy shadow-sm transition-all hover:shadow-md hover:border-sena-green/30">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-sena-green/10 to-emerald-600/10 text-sena-green">
-                <Calendar size={18} strokeWidth={2.5} />
-              </div>
-              <span className="capitalize">
-                {new Date().toLocaleDateString("es-CO", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })}
-              </span>
-            </div>
+            <DateBadge />
 
             {/* Extra status info */}
             <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 px-2">

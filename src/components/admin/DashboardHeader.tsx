@@ -1,43 +1,44 @@
 "use client";
 
 import {
-  Bell,
-  ChevronDown,
-  GraduationCap,
-  LogOut,
-  Mail,
-  MapPin,
-  Phone,
-  Search,
-  Settings,
-  ShieldCheck,
-  Sparkles,
-  User,
-  UserCircle,
+    Bell,
+    ChevronDown,
+    GraduationCap,
+    LogOut,
+    Mail,
+    MapPin,
+    PanelLeftClose,
+    Phone,
+    Search,
+    Settings,
+    ShieldCheck,
+    Sparkles,
+    User,
+    UserCircle
 } from "lucide-react";
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
 } from "@/components/ui/tooltip";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -170,14 +171,30 @@ export default function DashboardHeader({
   userRole = "Administrador / Bienestar",
 }: DashboardHeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <>
       <header className="sticky top-0 z-20 w-full border-b border-gray-100 bg-white/95 px-8 py-4 backdrop-blur-md shadow-sm font-primary">
         <div className="flex items-center justify-between gap-6">
-          {/* ── Left: Global Search ── */}
-          <div className="flex-1 max-w-md">
-            <div className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 shadow-sm focus-within:border-sena-green focus-within:ring-2 focus-within:ring-sena-green/20 focus-within:bg-white transition-all">
+          {/* ── Left: Sidebar toggle + Global Search ── */}
+          <div className="flex items-center gap-3 flex-1 max-w-md">
+            {/* Sidebar toggle */}
+            <button
+              type="button"
+              onClick={() => setSidebarOpen((v) => !v)}
+              aria-label={sidebarOpen ? "Cerrar panel lateral" : "Abrir panel lateral"}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-all hover:border-sena-green hover:bg-sena-green hover:text-white active:scale-95"
+            >
+              <PanelLeftClose
+                size={18}
+                strokeWidth={2}
+                className={`transition-transform duration-300 ${sidebarOpen ? "" : "rotate-180"}`}
+              />
+            </button>
+
+            {/* Search bar */}
+            <div className="flex flex-1 items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 shadow-sm focus-within:border-sena-green focus-within:ring-2 focus-within:ring-sena-green/20 focus-within:bg-white transition-all">
               <Search size={16} className="shrink-0 text-gray-400" />
               <input
                 type="search"

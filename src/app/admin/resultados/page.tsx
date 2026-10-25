@@ -1,24 +1,23 @@
 "use client";
 
+import {
+    AlignLeft,
+    ArrowRight,
+    CheckCircle2,
+    ChefHat,
+    ChevronRight,
+    Code2,
+    DollarSign,
+    Film,
+    Info,
+    Search,
+    Settings,
+    TrendingUp,
+    Wrench,
+    XCircle,
+} from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import {
-  Search,
-  AlignLeft,
-  Code2,
-  Settings,
-  Wrench,
-  TrendingUp,
-  ChefHat,
-  Film,
-  DollarSign,
-  ArrowRight,
-  Info,
-  CheckCircle2,
-  XCircle,
-  ChevronRight,
-} from "lucide-react";
-import DashboardHeader from "@/components/admin/DashboardHeader";
 
 /* ─────────────────────────────────────────────────────────
    Data
@@ -98,7 +97,6 @@ export default function ResultadosPage() {
 
   return (
     <>
-      <DashboardHeader />
 
       <div className="flex flex-1 gap-6 p-8 flex-col">
         {/* ── Page Header ── */}
