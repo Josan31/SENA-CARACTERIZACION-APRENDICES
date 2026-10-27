@@ -1,10 +1,8 @@
-﻿
-"use client";
+﻿"use client";
 
 import React from "react";
 import {
   ArrowLeft,
-  Camera,
   UserRound,
   Mail,
   Phone,
@@ -16,13 +14,21 @@ import {
   ShieldCheck,
   CircleUserRound,
 } from "lucide-react";
+import Link from "next/link";
+import { useCurrentUser, getInitials } from "@/hooks/useCurrentUser";
 
+/* ─────────────────────────────────────────────────────────
+   Types
+───────────────────────────────────────────────────────── */
 type InfoRowProps = {
   icon: React.ReactNode;
   label: string;
   value: string;
 };
 
+/* ─────────────────────────────────────────────────────────
+   Info row
+───────────────────────────────────────────────────────── */
 function InfoRow({ icon, label, value }: InfoRowProps) {
   return (
     <div className="grid grid-cols-[32px_minmax(0,1fr)] items-start gap-3 border-b border-[#edf5f3] py-3 last:border-b-0 sm:grid-cols-[36px_minmax(0,1fr)] sm:gap-4">
@@ -41,6 +47,9 @@ function InfoRow({ icon, label, value }: InfoRowProps) {
   );
 }
 
+/* ─────────────────────────────────────────────────────────
+   Section header
+───────────────────────────────────────────────────────── */
 function SectionHeader({
   icon,
   title,
@@ -69,83 +78,95 @@ function DecorativeEdit() {
   );
 }
 
-function AdminAvatar({ large = false }: { large?: boolean }) {
+/* ─────────────────────────────────────────────────────────
+   Initials avatar — mirrors the sidebar gradient exactly
+   (bg-gradient-to-br from-sena-green to-emerald-600)
+───────────────────────────────────────────────────────── */
+function InitialsAvatar({
+  initials,
+  large = false,
+}: {
+  initials: string;
+  large?: boolean;
+}) {
   return (
     <div
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gradient-to-br from-[#a8e8c9] via-[#6dd4a7] to-[#149c6b] shadow-sm ${
+      className={`relative flex shrink-0 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-sena-green to-emerald-600 shadow-sm ${
         large ? "h-24 w-24 sm:h-28 sm:w-28" : "h-16 w-16"
       }`}
-      aria-label="Avatar de ejemplo"
+      aria-label="Avatar del administrador"
     >
-      <svg
-        viewBox="0 0 100 100"
-        className="h-full w-full"
-        fill="none"
-        aria-hidden="true"
+      <span
+        className={`font-black text-white select-none ${
+          large ? "text-3xl sm:text-4xl" : "text-xl"
+        }`}
       >
-        <circle cx="50" cy="50" r="49" fill="#69d6a6" />
-        <path
-          d="M13 100c2-21 15-31 37-31s35 10 37 31H13Z"
-          fill="#07875b"
-        />
-        <path
-          d="M38 62h24v16c-6 8-18 8-24 0V62Z"
-          fill="#f3b982"
-        />
-        <ellipse cx="50" cy="43" rx="23" ry="27" fill="#ffc996" />
-        <path
-          d="M27 43c-3-20 8-32 24-32 17 0 27 12 23 31-5-3-9-9-10-16-8 8-21 11-36 10l-1 7Z"
-          fill="#073b46"
-        />
-        <path
-          d="M29 45c-4-3-6 0-4 7 1 4 3 6 6 5l-2-12Zm42 0c4-3 6 0 4 7-1 4-3 6-6 5l2-12Z"
-          fill="#ffc996"
-        />
-        <path
-          d="M35 77c5 5 10 7 15 7s10-2 15-7l15 7 7 16H13l7-16 15-7Z"
-          fill="#087d4b"
-        />
-      </svg>
-
-      {large && (
-        <span className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#087d4b] text-white">
-          <Camera size={13} />
-        </span>
-      )}
+        {initials}
+      </span>
     </div>
   );
 }
 
+/* ─────────────────────────────────────────────────────────
+   Map internal role keys → human-readable label
+───────────────────────────────────────────────────────── */
+function formatRole(rol: string): string {
+  const map: Record<string, string> = {
+    admin: "Administrador",
+    lider_bienestar: "Líder de Bienestar",
+    aprendiz: "Aprendiz",
+  };
+  return map[rol] ?? rol;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Page
+───────────────────────────────────────────────────────── */
 export default function PerfilAdministradorPage() {
+  const user = useCurrentUser();
+
+  const nombre = user?.nombre ?? "Administrador SENA";
+  const correo = user?.correo ?? "—";
+  const rol = user ? formatRole(user.rol) : "Administrador";
+  const tipoDocumento = user?.tipoDocumento ?? "—";
+  const centro = user?.centro ?? "—";
+  const initials = getInitials(nombre);
+
   return (
     <main className="min-h-screen bg-[#eaf7f6] p-3 text-slate-700 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1440px] overflow-hidden rounded-2xl border border-white/80 bg-white/75 shadow-[0_12px_45px_rgba(20,100,100,0.08)]">
+        {/* Top bar */}
         <div className="flex items-center justify-between border-b border-[#e3f1ef] px-4 py-3 sm:px-7">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#087d4b] shadow-sm ring-1 ring-[#d9efea]">
+          <Link
+            href="/admin"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#087d4b] shadow-sm ring-1 ring-[#d9efea] hover:bg-[#e8f6ef] transition-colors"
+            aria-label="Volver al panel principal"
+          >
             <ArrowLeft size={18} />
-          </span>
+          </Link>
           <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#5d9c8c]">
             Portal administrativo
           </span>
         </div>
 
         <div className="p-4 sm:p-7 lg:p-8">
+          {/* ── Hero row ── */}
           <section className="grid gap-5 border-b border-[#e4f1ef] pb-6 md:grid-cols-[minmax(0,1fr)_300px] md:items-center">
             <div className="flex min-w-0 items-center gap-4 sm:gap-6">
-              <AdminAvatar large />
+              <InitialsAvatar initials={initials} large />
               <div className="min-w-0">
                 <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#169565] sm:text-xs">
                   Mi cuenta
                 </p>
                 <h1 className="text-xl font-black tracking-tight text-[#174d4b] sm:text-2xl lg:text-3xl">
-                  Nombre del administrador
+                  {nombre}
                 </h1>
                 <p className="mt-1 text-sm font-medium text-slate-500">
-                  Perfil de usuario administrativo
+                  {correo}
                 </p>
                 <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#d8f4e7] px-3 py-1.5 text-xs font-bold text-[#087d4b]">
                   <ShieldCheck size={15} />
-                  Cuenta administrativa
+                  {rol}
                 </span>
               </div>
             </div>
@@ -165,6 +186,7 @@ export default function PerfilAdministradorPage() {
             </div>
           </section>
 
+          {/* ── Tabs ── */}
           <nav
             aria-label="Secciones del perfil administrativo"
             className="flex gap-1 overflow-x-auto border-b border-[#e4f1ef] py-2"
@@ -195,36 +217,35 @@ export default function PerfilAdministradorPage() {
             ))}
           </nav>
 
+          {/* ── Content grid ── */}
           <div className="grid gap-4 pt-5 lg:grid-cols-2 lg:gap-5">
+            {/* Left column */}
             <div className="space-y-4">
+              {/* Initials / avatar section */}
               <section className="rounded-2xl border border-[#e0f1ee] bg-white/90 p-4 shadow-[0_3px_12px_rgba(30,110,100,0.04)] sm:p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <SectionHeader
-                    icon={<Camera size={16} />}
-                    title="Foto de perfil"
+                    icon={<UserRound size={16} />}
+                    title="Avatar de perfil"
                   />
                   <DecorativeEdit />
                 </div>
 
                 <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
-                  <AdminAvatar large />
+                  <InitialsAvatar initials={initials} large />
                   <div className="w-full flex-1">
                     <div className="rounded-xl bg-[#eaf8f4] px-4 py-3 text-xs leading-relaxed text-[#52877c]">
                       <span className="mb-1 flex items-center gap-2 font-bold text-[#087d4b]">
                         <ShieldCheck size={14} />
-                        Imagen de cuenta
+                        Identificación visual
                       </span>
-                      Esta imagen se utiliza para identificar tu perfil dentro de la plataforma.
+                      Tus iniciales se generan automáticamente a partir de tu nombre registrado y se usan para identificar tu perfil dentro de la plataforma.
                     </div>
-
-                    <span className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#8bdcb9] px-4 py-2 text-xs font-bold text-[#087d4b]">
-                      <Camera size={14} />
-                      Cambiar foto
-                    </span>
                   </div>
                 </div>
               </section>
 
+              {/* Personal info section */}
               <section className="rounded-2xl border border-[#e0f1ee] bg-white/90 p-4 shadow-[0_3px_12px_rgba(30,110,100,0.04)] sm:p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <SectionHeader
@@ -237,12 +258,12 @@ export default function PerfilAdministradorPage() {
                 <InfoRow
                   icon={<UserRound size={16} />}
                   label="Nombre completo"
-                  value="Nombre y apellidos"
+                  value={nombre}
                 />
                 <InfoRow
                   icon={<FileText size={16} />}
                   label="Tipo de documento"
-                  value="Tipo de documento"
+                  value={tipoDocumento}
                 />
                 <InfoRow
                   icon={<FileText size={16} />}
@@ -257,6 +278,7 @@ export default function PerfilAdministradorPage() {
               </section>
             </div>
 
+            {/* Right column */}
             <div className="space-y-4">
               <section className="rounded-2xl border border-[#e0f1ee] bg-white/90 p-4 shadow-[0_3px_12px_rgba(30,110,100,0.04)] sm:p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -270,7 +292,7 @@ export default function PerfilAdministradorPage() {
                 <InfoRow
                   icon={<Mail size={16} />}
                   label="Correo electrónico"
-                  value="correo@institucion.edu.co"
+                  value={correo}
                 />
                 <InfoRow
                   icon={<Phone size={16} />}
@@ -279,13 +301,12 @@ export default function PerfilAdministradorPage() {
                 />
                 <InfoRow
                   icon={<MapPin size={16} />}
-                  label="Dirección de residencia"
-                  value="Ciudad, departamento"
+                  label="Centro de formación"
+                  value={centro}
                 />
               </section>
             </div>
           </div>
-
         </div>
       </div>
     </main>

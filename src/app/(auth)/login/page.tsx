@@ -2,17 +2,17 @@
 
 import { authenticate } from "@/lib/users";
 import {
-    ArrowRight,
-    ClipboardList,
-    CreditCard,
-    Eye,
-    EyeOff,
-    Hash,
-    IdCard,
-    Lock,
-    LogIn,
-    MessageSquare,
-    UserCheck,
+  ArrowRight,
+  ClipboardList,
+  CreditCard,
+  Eye,
+  EyeOff,
+  Hash,
+  IdCard,
+  Lock,
+  LogIn,
+  MessageSquare,
+  UserCheck,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -295,7 +295,6 @@ export default function LoginPage() {
             </h1>
           </div>
 
-
           {/* Formulario */}
           <form
             onSubmit={handleSubmit}
@@ -362,27 +361,6 @@ export default function LoginPage() {
                 </button>
               }
             />
-
-            <div className="flex items-center justify-between gap-2 pt-1">
-              <label className="flex cursor-pointer items-center gap-2 select-none">
-                <input
-                  type="checkbox"
-                  checked={privacyAccepted}
-                  onChange={(e) => setPrivacyAccepted(e.target.checked)}
-                  className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-sena-green"
-                />
-                <span className="text-xs sm:text-sm font-medium text-sena-navy">
-                  Política de privacidad
-                </span>
-              </label>
-
-              <Link
-                href="/forgot-password"
-                className="text-xs sm:text-sm font-semibold text-sena-green hover:underline whitespace-nowrap"
-              >
-                Olvidé mi contraseña
-              </Link>
-            </div>
 
             {error && (
               <p

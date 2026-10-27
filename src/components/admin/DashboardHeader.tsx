@@ -1,63 +1,65 @@
 "use client";
 
 import {
-    Bell,
-    ChevronDown,
-    GraduationCap,
-    LogOut,
-    Mail,
-    MapPin,
-    PanelLeftClose,
-    Phone,
-    Search,
-    Settings,
-    ShieldCheck,
-    Sparkles,
-    User,
-    UserCircle
+  Bell,
+  ChevronDown,
+  GraduationCap,
+  LogOut,
+  Mail,
+  MapPin,
+  PanelLeftClose,
+  Phone,
+  Search,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  User,
+  UserCircle,
 } from "lucide-react";
 
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
+import { useCurrentUser, getInitials } from "@/hooks/useCurrentUser";
 
 /* ─────────────────────────────────────────────────────────
-   Types
+   Helpers
 ───────────────────────────────────────────────────────── */
-interface DashboardHeaderProps {
-  /** Nombre del usuario para el badge superior */
-  userName?: string;
-  /** Rol o tipo de usuario */
-  userRole?: string;
+function formatRole(rol: string): string {
+  const map: Record<string, string> = {
+    admin: "Administrador",
+    lider_bienestar: "Líder de Bienestar",
+    aprendiz: "Aprendiz",
+  };
+  return map[rol] ?? rol;
 }
 
 /* ─────────────────────────────────────────────────────────
-   Profile Detail Row — small helper inside the modal
+   Profile Detail Row — used inside the modal
 ───────────────────────────────────────────────────────── */
 function ProfileRow({
   icon: Icon,
@@ -86,38 +88,56 @@ function ProfileRow({
 }
 
 /* ─────────────────────────────────────────────────────────
+   Gradient initials avatar — reusable inside the modal
+───────────────────────────────────────────────────────── */
+function InitialsAvatar({ initials, size = "lg" }: { initials: string; size?: "sm" | "lg" }) {
+  const dim = size === "lg" ? "h-20 w-20 text-3xl rounded-2xl" : "h-9 w-9 text-sm rounded-xl";
+  return (
+    <div
+      className={`flex shrink-0 items-center justify-center bg-gradient-to-br from-sena-green to-emerald-600 text-white font-black shadow-md ${dim}`}
+    >
+      {initials}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    Profile Modal Content
 ───────────────────────────────────────────────────────── */
 function ProfileModal({
-  userName,
-  userRole,
+  nombre,
+  correo,
+  rol,
+  centro,
+  initials,
 }: {
-  userName: string;
-  userRole: string;
+  nombre: string;
+  correo: string;
+  rol: string;
+  centro: string;
+  initials: string;
 }) {
   return (
     <div className="space-y-6 pt-2">
       {/* Avatar + name block */}
       <div className="flex flex-col items-center gap-3 text-center">
         <div className="relative">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-sena-navy to-sena-green text-white text-3xl font-black shadow-lg">
-            {userName.charAt(0)}
-          </div>
-          {/* Online indicator dot */}
+          <InitialsAvatar initials={initials} size="lg" />
+          {/* Online indicator */}
           <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-sena-green ring-2 ring-white flex items-center justify-center">
             <span className="h-2 w-2 rounded-full bg-white" />
           </span>
         </div>
         <div>
           <h3 className="text-lg font-extrabold text-sena-navy leading-tight">
-            {userName}
+            {nombre}
           </h3>
           <Badge
             variant="secondary"
             className="mt-1 bg-sena-green/10 text-sena-green border-0 font-semibold text-xs"
           >
             <Sparkles size={11} className="mr-1" />
-            {userRole}
+            {rol}
           </Badge>
         </div>
       </div>
@@ -126,20 +146,12 @@ function ProfileModal({
 
       {/* Profile details grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <ProfileRow icon={Mail} label="Correo" value="carestrepo@sena.edu.co" />
+        <ProfileRow icon={Mail} label="Correo" value={correo} />
         <ProfileRow icon={Phone} label="Teléfono" value="+57 (602) 824 7654" />
-        <ProfileRow
-          icon={MapPin}
-          label="Sede"
-          value="Popayán, Cauca - Colombia"
-        />
-        <ProfileRow
-          icon={GraduationCap}
-          label="Dependencia"
-          value="Bienestar al Aprendiz"
-        />
+        <ProfileRow icon={MapPin} label="Sede" value="Popayán, Cauca - Colombia" />
+        <ProfileRow icon={GraduationCap} label="Dependencia" value="Bienestar al Aprendiz" />
         <ProfileRow icon={UserCircle} label="Cargo" value="Coordinador de Bienestar" />
-        <ProfileRow icon={Settings} label="Centro" value="Centro de Teleinformática y Producción Industrial" />
+        <ProfileRow icon={Settings} label="Centro" value={centro || "Centro de Teleinformática y Producción Industrial"} />
       </div>
 
       <Separator className="bg-gray-100" />
@@ -166,20 +178,25 @@ function ProfileModal({
 /* ─────────────────────────────────────────────────────────
    Main Header Component
 ───────────────────────────────────────────────────────── */
-export default function DashboardHeader({
-  userName = "Carlos Restrepo",
-  userRole = "Administrador / Bienestar",
-}: DashboardHeaderProps) {
+export default function DashboardHeader() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  const user = useCurrentUser();
+  const nombre  = user?.nombre  ?? "Usuario SENA";
+  const correo  = user?.correo  ?? "—";
+  const centro  = user?.centro  ?? "";
+  const rol     = user ? formatRole(user.rol) : "Administrador";
+  const initials = getInitials(nombre);
+
   return (
     <>
-      <header className="sticky top-0 z-20 w-full border-b border-gray-100 bg-white/95 px-8 py-4 backdrop-blur-md shadow-sm font-primary">
-        <div className="flex items-center justify-between gap-6">
+      <header className="sticky top-0 z-20 w-full border-b border-gray-100 bg-white/95 px-8 backdrop-blur-md shadow-sm font-primary">
+        {/* Fixed height that matches the sidebar brand block (73px = 1px border-b + 72px content) */}
+        <div className="flex h-[72px] items-center justify-between gap-6">
+
           {/* ── Left: Sidebar toggle + Global Search ── */}
           <div className="flex items-center gap-3 flex-1 max-w-md">
-            {/* Sidebar toggle */}
             <button
               type="button"
               onClick={() => setSidebarOpen((v) => !v)}
@@ -193,7 +210,6 @@ export default function DashboardHeader({
               />
             </button>
 
-            {/* Search bar */}
             <div className="flex flex-1 items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 shadow-sm focus-within:border-sena-green focus-within:ring-2 focus-within:ring-sena-green/20 focus-within:bg-white transition-all">
               <Search size={16} className="shrink-0 text-gray-400" />
               <input
@@ -205,9 +221,9 @@ export default function DashboardHeader({
             </div>
           </div>
 
-          {/* ── Right: Controls, User, SENA branding ── */}
+          {/* ── Right: Controls + User ── */}
           <div className="flex items-center gap-4 shrink-0">
-            {/* Quick Actions (Notifications, Security, Settings) */}
+            {/* Quick Actions */}
             <div className="flex items-center gap-2">
               <Tooltip>
                 <TooltipTrigger
@@ -219,10 +235,7 @@ export default function DashboardHeader({
                   <Bell size={18} />
                   <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-sena-green ring-2 ring-white" />
                 </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-sena-navy text-white text-xs font-medium"
-                >
+                <TooltipContent side="bottom" className="bg-sena-navy text-white text-xs font-medium">
                   Notificaciones
                 </TooltipContent>
               </Tooltip>
@@ -236,10 +249,7 @@ export default function DashboardHeader({
                 >
                   <ShieldCheck size={18} />
                 </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-sena-navy text-white text-xs font-medium"
-                >
+                <TooltipContent side="bottom" className="bg-sena-navy text-white text-xs font-medium">
                   Seguridad
                 </TooltipContent>
               </Tooltip>
@@ -253,36 +263,30 @@ export default function DashboardHeader({
                 >
                   <Settings size={18} />
                 </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-sena-navy text-white text-xs font-medium"
-                >
+                <TooltipContent side="bottom" className="bg-sena-navy text-white text-xs font-medium">
                   Configuración
                 </TooltipContent>
               </Tooltip>
             </div>
 
-            {/* Separator */}
             <div className="h-8 w-px bg-gray-200" />
 
-            {/* ── User Avatar + DropdownMenu ── */}
+            {/* ── User Avatar + Dropdown ── */}
             <DropdownMenu>
               <DropdownMenuTrigger
                 id="btn-user-menu"
                 className="flex items-center gap-3 cursor-pointer group rounded-xl border border-gray-200 bg-white pl-2 pr-4 py-1.5 shadow-xs transition-all hover:border-sena-green hover:bg-sena-light outline-none focus-visible:ring-2 focus-visible:ring-sena-green/40"
                 aria-label="Menú de usuario"
               >
-                <Avatar className="h-9 w-9 rounded-xl shadow-sm ring-2 ring-transparent group-hover:ring-sena-green/30 transition-all">
-                  <AvatarFallback className="rounded-xl bg-sena-navy text-white font-bold text-sm group-hover:bg-sena-green transition-colors">
-                    {userName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+                {/* Gradient initials — matches sidebar pill exactly */}
+                <InitialsAvatar initials={initials} size="sm" />
+
                 <div className="hidden sm:block text-left leading-tight">
                   <p className="text-sm font-bold text-sena-navy group-hover:text-sena-green transition-colors">
-                    {userName}
+                    {nombre}
                   </p>
                   <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
-                    {userRole}
+                    {rol}
                   </p>
                 </div>
                 <ChevronDown
@@ -296,22 +300,17 @@ export default function DashboardHeader({
                 className="w-56 rounded-2xl border border-gray-100 shadow-xl p-1.5 font-primary"
                 sideOffset={8}
               >
-                {/* User info header in dropdown */}
+                {/* User info header */}
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="px-3 py-2">
-                    <p className="text-sm font-bold text-sena-navy">
-                      {userName} García López
-                    </p>
-                    <p className="text-xs font-medium text-gray-400 mt-0.5">
-                      valentina@sena.edu.co
-                    </p>
+                    <p className="text-sm font-bold text-sena-navy">{nombre}</p>
+                    <p className="text-xs font-medium text-gray-400 mt-0.5">{correo}</p>
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
 
                 <DropdownMenuSeparator className="bg-gray-100 my-1" />
 
                 <DropdownMenuGroup>
-                  {/* "Ver Perfil" opens the Dialog */}
                   <DropdownMenuItem
                     id="menu-ver-perfil"
                     className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-sena-navy cursor-pointer transition-colors"
@@ -339,11 +338,7 @@ export default function DashboardHeader({
                   id="menu-cerrar-sesion"
                   onClick={() => {
                     if (typeof window !== "undefined") {
-                      try {
-                        localStorage.removeItem("sena_user");
-                      } catch {
-                        // ignore
-                      }
+                      try { localStorage.removeItem("sena_user"); } catch { /* ignore */ }
                       window.location.href = "/login";
                     }
                   }}
@@ -358,7 +353,7 @@ export default function DashboardHeader({
         </div>
       </header>
 
-      {/* ── Profile Dialog / Modal ── */}
+      {/* ── Profile Dialog ── */}
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
         <DialogContent
           id="dialog-perfil-usuario"
@@ -368,7 +363,7 @@ export default function DashboardHeader({
             <div className="flex items-center gap-2 mb-1">
               <div className="h-5 w-1 rounded-full bg-sena-green" />
               <DialogTitle className="text-xl font-extrabold text-sena-navy">
-                Perfil del Aprendiz
+                Perfil del Administrador
               </DialogTitle>
             </div>
             <DialogDescription className="text-xs font-medium text-gray-400 ml-3">
@@ -376,7 +371,13 @@ export default function DashboardHeader({
             </DialogDescription>
           </DialogHeader>
 
-          <ProfileModal userName={userName} userRole={userRole} />
+          <ProfileModal
+            nombre={nombre}
+            correo={correo}
+            rol={rol}
+            centro={centro}
+            initials={initials}
+          />
         </DialogContent>
       </Dialog>
     </>
