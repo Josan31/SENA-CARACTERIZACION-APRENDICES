@@ -306,9 +306,7 @@ export default function PerfilAprendizPage() {
               </div>
             </div>
 
-            <p className="mt-6 text-center text-[11px] text-slate-400">
-              Vista de demostración · Datos de ejemplo · Elementos visuales sin funcionalidad
-            </p>
+
           </div>
         </div>
       </div>
