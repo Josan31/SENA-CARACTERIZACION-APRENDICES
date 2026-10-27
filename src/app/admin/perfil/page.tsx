@@ -286,7 +286,6 @@ export default function PerfilAdministradorPage() {
             </div>
           </div>
 
-
         </div>
       </div>
     </main>
