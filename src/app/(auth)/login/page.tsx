@@ -120,7 +120,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
@@ -137,7 +137,54 @@ export default function LoginPage() {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+      const response = await fetch(`${apiUrl}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          identificador: cleanDoc,
+          password: cleanPass,
+        }),
+      });
+
+      const resJson = await response.json();
+
+      if (!response.ok) {
+        const errorMsg =
+          resJson?.message ||
+          (Array.isArray(resJson?.errors) ? resJson.errors.join(", ") : null) ||
+          "Credenciales incorrectas.";
+        setError(errorMsg);
+        setIsLoading(false);
+        return;
+      }
+
+      if (typeof window !== "undefined" && resJson.data) {
+        const authData = resJson.data;
+        if (authData.accessToken) {
+          localStorage.setItem("sena_token", authData.accessToken);
+        }
+        if (authData.user) {
+          const userPayload = {
+            ...authData.user,
+            tipoDocumento: authData.user.tipoDocumento || docType || "CC",
+            numeroDocumento: authData.user.numeroDocumento || cleanDoc,
+          };
+          localStorage.setItem("sena_user", JSON.stringify(userPayload));
+        }
+
+        if (authData.user?.rol === "admin") {
+          window.location.href = "/admin";
+        } else {
+          window.location.href = "/aprendiz";
+        }
+      }
+    } catch (networkErr) {
+      console.warn("Backend no disponible, ejecutando autenticación local:", networkErr);
       const authResult = authenticate(cleanDoc, cleanPass);
 
       if (!authResult.success) {
@@ -146,7 +193,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Guardar usuario en localStorage para persistencia institucional
       if (typeof window !== "undefined" && authResult.user) {
         try {
           localStorage.setItem("sena_user", JSON.stringify(authResult.user));
@@ -154,14 +200,15 @@ export default function LoginPage() {
           // ignore
         }
 
-        // Navegación directa para evitar bloqueos del enrutador
         if (authResult.user.rol === "admin") {
           window.location.href = "/admin";
         } else {
           window.location.href = "/aprendiz";
         }
       }
-    }, 300);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
