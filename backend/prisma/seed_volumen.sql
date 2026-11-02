@@ -45,24 +45,23 @@ END $$;
 -- ============================================================
 WITH catalogos_lookup AS (
   SELECT 
-    MAX(CASE WHEN categoria = 'tipo_documento' AND valor LIKE 'CC%' THEN id END) as tipo_cc,
-    MAX(CASE WHEN categoria = 'tipo_documento' AND valor LIKE 'TI%' THEN id END) as tipo_ti,
-    MAX(CASE WHEN categoria = 'sexo' AND valor = 'Hombre' THEN id END) as sexo_h,
-    MAX(CASE WHEN categoria = 'sexo' AND valor = 'Mujer' THEN id END) as sexo_m,
-    MAX(CASE WHEN categoria = 'sexo' AND valor = 'Intersexual' THEN id END) as sexo_i,
-    MAX(CASE WHEN categoria = 'orientacion_sexual' AND valor = 'Heterosexual' THEN id END) as ori_het,
-    MAX(CASE WHEN categoria = 'orientacion_sexual' AND valor = 'Homosexual' THEN id END) as ori_hom,
-    MAX(CASE WHEN categoria = 'orientacion_sexual' AND valor = 'Bisexual' THEN id END) as ori_bi,
-    MAX(CASE WHEN categoria = 'orientacion_sexual' AND valor = 'Pansexual' THEN id END) as ori_pan,
-    MAX(CASE WHEN categoria = 'estado_civil' AND valor = 'Soltero(a)' THEN id END) as ec_soltero,
-    MAX(CASE WHEN categoria = 'estado_civil' AND valor = 'Casado(a)' THEN id END) as ec_casado,
-    MAX(CASE WHEN categoria = 'estado_civil' AND valor = 'Unión Libre' THEN id END) as ec_union,
-    MAX(CASE WHEN categoria = 'estado_civil' AND valor = 'Separado(a) / Divorciado(a)' THEN id END) as ec_separado,
-    MAX(CASE WHEN categoria = 'parentesco_acudiente' AND valor = 'Madre' THEN id END) as par_madre,
-    MAX(CASE WHEN categoria = 'parentesco_acudiente' AND valor = 'Padre' THEN id END) as par_padre,
-    MAX(CASE WHEN categoria = 'parentesco_acudiente' AND valor = 'Hermano(a)' THEN id END) as par_hermano,
-    MAX(CASE WHEN categoria = 'parentesco_acudiente' AND valor = 'Tío(a)' THEN id END) as par_tio
-  FROM catalogos
+    (SELECT id FROM catalogos WHERE categoria = 'tipo_documento' AND valor LIKE 'CC%' LIMIT 1) as tipo_cc,
+    (SELECT id FROM catalogos WHERE categoria = 'tipo_documento' AND valor LIKE 'TI%' LIMIT 1) as tipo_ti,
+    (SELECT id FROM catalogos WHERE categoria = 'sexo' AND valor = 'Hombre' LIMIT 1) as sexo_h,
+    (SELECT id FROM catalogos WHERE categoria = 'sexo' AND valor = 'Mujer' LIMIT 1) as sexo_m,
+    (SELECT id FROM catalogos WHERE categoria = 'sexo' AND valor = 'Intersexual' LIMIT 1) as sexo_i,
+    (SELECT id FROM catalogos WHERE categoria = 'orientacion_sexual' AND valor = 'Heterosexual' LIMIT 1) as ori_het,
+    (SELECT id FROM catalogos WHERE categoria = 'orientacion_sexual' AND valor = 'Homosexual' LIMIT 1) as ori_hom,
+    (SELECT id FROM catalogos WHERE categoria = 'orientacion_sexual' AND valor = 'Bisexual' LIMIT 1) as ori_bi,
+    (SELECT id FROM catalogos WHERE categoria = 'orientacion_sexual' AND valor = 'Pansexual' LIMIT 1) as ori_pan,
+    (SELECT id FROM catalogos WHERE categoria = 'estado_civil' AND valor = 'Soltero(a)' LIMIT 1) as ec_soltero,
+    (SELECT id FROM catalogos WHERE categoria = 'estado_civil' AND valor = 'Casado(a)' LIMIT 1) as ec_casado,
+    (SELECT id FROM catalogos WHERE categoria = 'estado_civil' AND valor = 'Unión Libre' LIMIT 1) as ec_union,
+    (SELECT id FROM catalogos WHERE categoria = 'estado_civil' AND valor = 'Separado(a) / Divorciado(a)' LIMIT 1) as ec_separado,
+    (SELECT id FROM catalogos WHERE categoria = 'parentesco_acudiente' AND valor = 'Madre' LIMIT 1) as par_madre,
+    (SELECT id FROM catalogos WHERE categoria = 'parentesco_acudiente' AND valor = 'Padre' LIMIT 1) as par_padre,
+    (SELECT id FROM catalogos WHERE categoria = 'parentesco_acudiente' AND valor = 'Hermano(a)' LIMIT 1) as par_hermano,
+    (SELECT id FROM catalogos WHERE categoria = 'parentesco_acudiente' AND valor = 'Tío(a)' LIMIT 1) as par_tio
 ),
 aprendices_base AS (
   SELECT 
@@ -127,24 +126,20 @@ WITH aprendices_sin_caract AS (
   WHERE numero_documento LIKE '99900%'
     AND NOT EXISTS (SELECT 1 FROM caracterizaciones c WHERE c.aprendiz_id = aprendices.id)
 ),
-aprendices_para_2_versiones AS (
-  SELECT id FROM aprendices_sin_caract WHERE rn <= 10
-),
 otros_aprendices AS (
-  SELECT id, rn FROM aprendices_sin_caract WHERE rn > 10
+  SELECT id, rn FROM aprendices_sin_caract
 ),
 caracterizaciones_a_crear AS (
   SELECT 
     id as aprendiz_id,
     1 as version,
     CASE 
-      WHEN rn <= 7 THEN 'completa'      -- ~70% de 110 restantes? total 120: 10 tienen 2 versiones = 110 con 1
-      WHEN rn <= 9 THEN 'en_curso'
-      ELSE 'sin'  -- ~10% sin ninguna - pero vamos a manejar diferente
+      WHEN rn <= 77 THEN 'completa'      -- ~70% of 110
+      WHEN rn <= 99 THEN 'en_curso'      -- ~20% of 110  
+      ELSE 'sin'                         -- ~10% sin ninguna
     END as estado_plan,
     rn
   FROM otros_aprendices
-  WHERE rn <= 110  -- dejar 10 sin caracterización para el ~10%
 )
 INSERT INTO caracterizaciones (aprendiz_id, radicado, fecha, version, estado, created_at, updated_at)
 SELECT 
@@ -152,77 +147,88 @@ SELECT
   CASE WHEN estado_plan = 'completa' THEN ('RAD-SENA-' || EXTRACT(YEAR FROM CURRENT_DATE) || '-' || LPAD(nextval('radicado_seq')::text, 6, '0')) ELSE NULL END,
   CURRENT_DATE - (random() * interval '60 days'),
   version,
-  CASE WHEN estado_plan = 'sin' THEN NULL ELSE estado_plan END, -- no insertar, pero mejor filtrar
+  estado_plan,
   NOW(), NOW()
 FROM caracterizaciones_a_crear
 WHERE estado_plan != 'sin';
 
 -- Crear segunda versión para 10 aprendices (v1 completa + v2 completa/en_curso)
 WITH aprendices_con_v1 AS (
-  SELECT c.aprendiz_id, c.id as v1_id
+  SELECT c.aprendiz_id
   FROM caracterizaciones c
   JOIN aprendices a ON a.id = c.aprendiz_id
   WHERE a.numero_documento LIKE '99900%'
     AND c.version = 1
   ORDER BY a.numero_documento
   LIMIT 10
-),
-v2_insertadas AS (
-  INSERT INTO caracterizaciones (aprendiz_id, radicado, fecha, version, estado, created_at, updated_at)
-  SELECT 
-    aprendiz_id,
-    CASE WHEN random() < 0.7 THEN ('RAD-SENA-' || EXTRACT(YEAR FROM CURRENT_DATE) || '-' || LPAD(nextval('radicado_seq')::text, 6, '0')) ELSE NULL END,
-    CURRENT_DATE - (random() * interval '30 days'),
-    2,
-    CASE WHEN random() < 0.7 THEN 'completa' ELSE 'en_curso' END,
-    NOW(), NOW()
-  FROM aprendices_con_v1
-  RETURNING id, aprendiz_id, estado
 )
-SELECT * FROM v2_insertadas;
+INSERT INTO caracterizaciones (aprendiz_id, radicado, fecha, version, estado, created_at, updated_at)
+SELECT 
+  aprendiz_id,
+  CASE WHEN random() < 0.7 THEN ('RAD-SENA-' || EXTRACT(YEAR FROM CURRENT_DATE) || '-' || LPAD(nextval('radicado_seq')::text, 6, '0')) ELSE NULL END,
+  CURRENT_DATE - (random() * interval '30 days'),
+  2,
+  CASE WHEN random() < 0.7 THEN 'completa' ELSE 'en_curso' END,
+  NOW(), NOW()
+FROM aprendices_con_v1;
 
 -- ============================================================
 -- 4. FICHAS, FORMACIÓN (1:1 por caracterización)
 -- 4 fichas: 2 técnicos y 2 tecnólogos, diurna y nocturna
 -- ============================================================
-WITH fichas_crear AS (
-  SELECT * FROM (VALUES
-    ('999FIC01', 'Análisis y Desarrollo de Software', 'Diurna', 'Presencial', 'Tecnólogo'),
-    ('999FIC02', 'Logística Empresarial', 'Nocturna', 'Presencial', 'Técnico'),
-    ('999FIC03', 'Contabilidad y Finanzas', 'Diurna', 'Presencial', 'Tecnólogo'),
-    ('999FIC04', 'Técnico en Cocina', 'Nocturna', 'Presencial', 'Técnico')
-  ) AS f(numero_ficha, programa_val, jornada_val, modalidad_val, nivel_val)
-)
 INSERT INTO fichas (numero_ficha, programa_id, jornada_id, modalidad_id, nivel_formacion_id, instructor_responsable, created_at, updated_at)
-SELECT 
-  f.numero_ficha,
-  (SELECT id FROM catalogos WHERE categoria = 'programa' AND valor = f.programa_val),
-  (SELECT id FROM catalogos WHERE categoria = 'jornada' AND valor = f.jornada_val),
-  (SELECT id FROM catalogos WHERE categoria = 'modalidad' AND valor = f.modalidad_val),
-  (SELECT id FROM catalogos WHERE categoria = 'nivel_formacion' AND valor = f.nivel_val),
-  'Instructor Prueba (ficticio)',
-  NOW(), NOW()
-ON CONFLICT (numero_ficha) DO NOTHING;
+SELECT '999FIC01', 
+       (SELECT id FROM catalogos WHERE categoria = 'programa' AND valor = 'Análisis y Desarrollo de Software'),
+       (SELECT id FROM catalogos WHERE categoria = 'jornada' AND valor = 'Diurna'),
+       (SELECT id FROM catalogos WHERE categoria = 'modalidad' AND valor = 'Presencial'),
+       (SELECT id FROM catalogos WHERE categoria = 'nivel_formacion' AND valor = 'Tecnólogo'),
+       'Instructor Prueba (ficticio)', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM fichas WHERE numero_ficha = '999FIC01');
+
+INSERT INTO fichas (numero_ficha, programa_id, jornada_id, modalidad_id, nivel_formacion_id, instructor_responsable, created_at, updated_at)
+SELECT '999FIC02', 
+       (SELECT id FROM catalogos WHERE categoria = 'programa' AND valor = 'Logística Empresarial'),
+       (SELECT id FROM catalogos WHERE categoria = 'jornada' AND valor = 'Nocturna'),
+       (SELECT id FROM catalogos WHERE categoria = 'modalidad' AND valor = 'Presencial'),
+       (SELECT id FROM catalogos WHERE categoria = 'nivel_formacion' AND valor = 'Técnico'),
+       'Instructor Prueba (ficticio)', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM fichas WHERE numero_ficha = '999FIC02');
+
+INSERT INTO fichas (numero_ficha, programa_id, jornada_id, modalidad_id, nivel_formacion_id, instructor_responsable, created_at, updated_at)
+SELECT '999FIC03', 
+       (SELECT id FROM catalogos WHERE categoria = 'programa' AND valor = 'Contabilidad y Finanzas'),
+       (SELECT id FROM catalogos WHERE categoria = 'jornada' AND valor = 'Diurna'),
+       (SELECT id FROM catalogos WHERE categoria = 'modalidad' AND valor = 'Presencial'),
+       (SELECT id FROM catalogos WHERE categoria = 'nivel_formacion' AND valor = 'Tecnólogo'),
+       'Instructor Prueba (ficticio)', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM fichas WHERE numero_ficha = '999FIC03');
+
+INSERT INTO fichas (numero_ficha, programa_id, jornada_id, modalidad_id, nivel_formacion_id, instructor_responsable, created_at, updated_at)
+SELECT '999FIC04', 
+       (SELECT id FROM catalogos WHERE categoria = 'programa' AND valor = 'Técnico en Cocina'),
+       (SELECT id FROM catalogos WHERE categoria = 'jornada' AND valor = 'Nocturna'),
+       (SELECT id FROM catalogos WHERE categoria = 'modalidad' AND valor = 'Presencial'),
+       (SELECT id FROM catalogos WHERE categoria = 'nivel_formacion' AND valor = 'Técnico'),
+       'Instructor Prueba (ficticio)', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM fichas WHERE numero_ficha = '999FIC04');
 
 -- Asignar fichas aleatoriamente a formaciones
 WITH caracterizaciones_con_aprendiz AS (
-  SELECT c.id as caracterizacion_id, c.aprendiz_id, a.numero_documento,
+  SELECT c.id as caracterizacion_id, c.aprendiz_id,
          ROW_NUMBER() OVER (ORDER BY random()) as rn
   FROM caracterizaciones c
   JOIN aprendices a ON a.id = c.aprendiz_id
   WHERE a.numero_documento LIKE '99900%'
 ),
-fichas_ids AS (
+fichas_list AS (
   SELECT id, ROW_NUMBER() OVER (ORDER BY numero_ficha) as rn FROM fichas WHERE numero_ficha LIKE '999FIC%'
 )
 INSERT INTO formacion (aprendiz_id, caracterizacion_id, ficha_id)
 SELECT 
   ca.aprendiz_id,
   ca.caracterizacion_id,
-  fi.id
-FROM caracterizaciones_con_aprendiz ca
-JOIN fichas_ids fi ON fi.rn = ((ca.rn % 4) + 1)
-ON CONFLICT (caracterizacion_id) DO NOTHING;
+  (SELECT id FROM fichas_list WHERE rn = ((ca.rn % 4) + 1))
+FROM caracterizaciones_con_aprendiz ca;
 
 -- ============================================================
 -- 5. LOCALIZACIÓN (1:1 por caracterización)
@@ -230,31 +236,25 @@ ON CONFLICT (caracterizacion_id) DO NOTHING;
 -- ============================================================
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id,
-         CASE WHEN random() < 0.7 THEN true ELSE false END as es_palmira
+         random() < 0.7 as es_palmira
   FROM caracterizaciones c
   JOIN aprendices a ON a.id = c.aprendiz_id
   WHERE a.numero_documento LIKE '99900%'
-),
-ciudades AS (
-  SELECT id, valor, ROW_NUMBER() OVER (ORDER BY valor) as rn FROM catalogos WHERE categoria = 'ciudad'
-),
-barrios AS (
-  SELECT id, ROW_NUMBER() OVER (ORDER BY valor) as rn FROM catalogos WHERE categoria = 'barrio'
 )
 INSERT INTO localizacion (aprendiz_id, caracterizacion_id, direccion, ciudad_id, barrio_id, estrato_id, zona_id, tenencia_vivienda_id, medio_transporte_id)
 SELECT 
   ca.aprendiz_id,
   ca.caracterizacion_id,
-  'Calle Prueba ' || (floor(random()*200)+1) || ' #' || (floor(random()*100)+1) || '-' || (floor(random()*50)+1),
+  'Calle Prueba ' || floor(random()*200)+1 || ' #' || floor(random()*100)+1 || '-' || floor(random()*50)+1,
   CASE 
     WHEN ca.es_palmira THEN (SELECT id FROM catalogos WHERE categoria = 'ciudad' AND valor = 'Palmira')
-    ELSE (SELECT id FROM ciudades WHERE rn = 1 + floor(random()*9))
+    ELSE (SELECT id FROM catalogos WHERE categoria = 'ciudad' AND random() < 0.5 ORDER BY random() LIMIT 1)
   END,
   CASE 
-    WHEN ca.es_palmira THEN (SELECT id FROM barrios WHERE rn = 1 + floor(random()*(SELECT count(*) FROM barrios)))
+    WHEN ca.es_palmira THEN (SELECT id FROM catalogos WHERE categoria = 'barrio' ORDER BY random() LIMIT 1)
     ELSE NULL
   END,
-  (SELECT id FROM catalogos WHERE categoria = 'estrato' AND orden = 1 + floor(random()*6)),
+  (SELECT id FROM catalogos WHERE categoria = 'estrato' ORDER BY random() LIMIT 1),
   NULL, NULL, NULL
 FROM caracterizaciones_con_aprendiz ca;
 
@@ -263,7 +263,7 @@ FROM caracterizaciones_con_aprendiz ca;
 -- ~10% con discapacidad
 -- ============================================================
 WITH caracterizaciones_con_aprendiz AS (
-  SELECT c.id as caracterizacion_id, c.aprendiz_id, a.numero_documento
+  SELECT c.id as caracterizacion_id, c.aprendiz_id
   FROM caracterizaciones c
   JOIN aprendices a ON a.id = c.aprendiz_id
   WHERE a.numero_documento LIKE '99900%'
@@ -277,7 +277,7 @@ INSERT INTO salud (
 SELECT 
   ca.aprendiz_id,
   ca.caracterizacion_id,
-  CASE WHEN random() < 0.95 THEN true ELSE false END,
+  random() < 0.95,
   (SELECT id FROM catalogos WHERE categoria = 'eps' ORDER BY random() LIMIT 1),
   (SELECT id FROM catalogos WHERE categoria = 'regimen_salud' ORDER BY random() LIMIT 1),
   (SELECT id FROM catalogos WHERE categoria = 'sisben_estado' ORDER BY random() LIMIT 1),
@@ -299,8 +299,8 @@ FROM caracterizaciones_con_aprendiz ca;
 -- ~12% cabezas de hogar con 1 a 3 hijos
 -- ============================================================
 WITH caracterizaciones_con_aprendiz AS (
-  SELECT c.id as caracterizacion_id, c.aprendiz_id, a.sexo_id,
-         (a.sexo_id = (SELECT id FROM catalogos WHERE categoria = 'sexo' AND valor = 'Mujer')) as es_mujer
+  SELECT c.id as caracterizacion_id, c.aprendiz_id,
+         (a.sexo_id = (SELECT id FROM catalogos WHERE categoria = 'sexo' AND valor = 'Mujer' LIMIT 1)) as es_mujer
   FROM caracterizaciones c
   JOIN aprendices a ON a.id = c.aprendiz_id
   WHERE a.numero_documento LIKE '99900%'
@@ -344,7 +344,6 @@ FROM caracterizaciones_con_aprendiz ca;
 -- ============================================================
 -- 9. SITUACIÓN ECONÓMICA
 -- Con trigger de coherencia: jefe_hogar y sostiene_hogar = true si sustento_principal es 'El propio aprendiz'
--- ~12% cabezas de hogar con 1 a 3 hijos (relacionado)
 -- ============================================================
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id
@@ -359,7 +358,7 @@ INSERT INTO situacion_economica (
 SELECT 
   ca.aprendiz_id,
   ca.caracterizacion_id,
-  false, false, -- se ajustará después si es propio aprendiz
+  false, false,
   (SELECT id FROM catalogos WHERE categoria = 'sustento_principal' ORDER BY random() LIMIT 1),
   floor(random()*4)::int,
   (SELECT id FROM catalogos WHERE categoria = 'rango_ingresos' ORDER BY random() LIMIT 1),
@@ -367,17 +366,17 @@ SELECT
   (SELECT id FROM catalogos WHERE categoria = 'grupo_etnico' ORDER BY random() LIMIT 1)
 FROM caracterizaciones_con_aprendiz ca;
 
--- Actualizar para cumplir trigger (cuando sustento es 'El propio aprendiz')
+-- Actualizar para cumplir trigger
 UPDATE situacion_economica se
 SET jefe_hogar = true, sostiene_hogar = true
-WHERE sustento_principal_id = (SELECT id FROM catalogos WHERE categoria = 'sustento_principal' AND valor = 'El propio aprendiz')
+WHERE sustento_principal_id = (SELECT id FROM catalogos WHERE categoria = 'sustento_principal' AND valor = 'El propio aprendiz' LIMIT 1)
   AND aprendiz_id IN (SELECT id FROM aprendices WHERE numero_documento LIKE '99900%');
 
 -- ============================================================
 -- 10. TABLAS SATÉLITE MULTIVALOR CON aprendiz_id Y caracterizacion_id COHERENTES
 -- ============================================================
 
--- PARENTESCOS HOGAR (1-2 por caracterización)
+-- PARENTESCOS HOGAR
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id
   FROM caracterizaciones c
@@ -392,7 +391,7 @@ SELECT
 FROM caracterizaciones_con_aprendiz ca
 WHERE random() < 0.8;
 
--- POBLACIONES RECONOCIDAS (algunas)
+-- POBLACIONES RECONOCIDAS
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id
   FROM caracterizaciones c
@@ -407,7 +406,7 @@ SELECT
 FROM caracterizaciones_con_aprendiz ca
 WHERE random() < 0.15;
 
--- APOYOS DEL ESTADO (algunos con apoyos)
+-- APOYOS DEL ESTADO
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id
   FROM caracterizaciones c
@@ -423,7 +422,7 @@ SELECT
 FROM caracterizaciones_con_aprendiz ca
 WHERE random() < 0.25;
 
--- SITUACIONES DEL HOGAR (algunas)
+-- SITUACIONES DEL HOGAR
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id
   FROM caracterizaciones c
@@ -438,7 +437,7 @@ SELECT
 FROM caracterizaciones_con_aprendiz ca
 WHERE random() < 0.12;
 
--- PROBLEMÁTICAS SECTOR (algunas)
+-- PROBLEMÁTICAS SECTOR
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id
   FROM caracterizaciones c
@@ -453,7 +452,7 @@ SELECT
 FROM caracterizaciones_con_aprendiz ca
 WHERE random() < 0.18;
 
--- SERVICIOS PÚBLICOS (multivalor)
+-- SERVICIOS PÚBLICOS
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id
   FROM caracterizaciones c
@@ -469,7 +468,7 @@ SELECT
 FROM caracterizaciones_con_aprendiz ca
 CROSS JOIN generate_series(1, 3);
 
--- PERFIL OCUPACIONAL (1:1 por caracterización)
+-- PERFIL OCUPACIONAL
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id
   FROM caracterizaciones c
