@@ -1,5 +1,10 @@
 import { Module } from '@nestjs/common';
+import { CatalogosController } from './catalogos.controller.js';
+import { CatalogosService } from './catalogos.service.js';
 
-@Module({})
+@Module({
+  controllers: [CatalogosController],
+  providers: [CatalogosService],
+  exports: [CatalogosService],
+})
 export class CatalogosModule {}
-
