@@ -300,7 +300,8 @@ FROM caracterizaciones_con_aprendiz ca;
 -- ============================================================
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id,
-         (a.sexo_id = (SELECT id FROM catalogos WHERE categoria = 'sexo' AND valor = 'Mujer' LIMIT 1)) as es_mujer
+         (a.sexo_id = (SELECT id FROM catalogos WHERE categoria = 'sexo' AND valor = 'Mujer' LIMIT 1)) as es_mujer,
+         random() as r_gestacion
   FROM caracterizaciones c
   JOIN aprendices a ON a.id = c.aprendiz_id
   WHERE a.numero_documento LIKE '99900%'
@@ -312,9 +313,9 @@ INSERT INTO salud_sexual_reproductiva (
 SELECT 
   ca.aprendiz_id,
   ca.caracterizacion_id,
-  CASE WHEN ca.es_mujer AND random() < 0.06 THEN true ELSE CASE WHEN ca.es_mujer THEN false ELSE NULL END END,
-  CASE WHEN ca.es_mujer AND random() < 0.06 THEN (1 + floor(random()*40))::int ELSE NULL END,
-  CASE WHEN ca.es_mujer AND random() < 0.04 THEN true ELSE CASE WHEN ca.es_mujer THEN false ELSE NULL END END,
+  CASE WHEN ca.es_mujer AND ca.r_gestacion < 0.06 THEN true WHEN ca.es_mujer THEN false ELSE NULL END,
+  CASE WHEN ca.es_mujer AND ca.r_gestacion < 0.06 THEN (1 + floor(random()*40))::int ELSE NULL END,
+  CASE WHEN ca.es_mujer AND random() < 0.04 THEN true WHEN ca.es_mujer THEN false ELSE NULL END,
   random() < 0.12,
   CASE WHEN random() < 0.12 THEN (1 + floor(random()*3))::int ELSE 0 END,
   (1 + floor(random()*5))::int,
