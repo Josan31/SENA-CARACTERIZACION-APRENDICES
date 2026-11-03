@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
+    "dev:backend": "npm --prefix backend run start:dev",
+    "db:studio": "npm --prefix backend run prisma:studio",
+    "db:seed": "npm --prefix backend run prisma:seed",
+    "db:migrate": "npm --prefix backend run prisma:migrate",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

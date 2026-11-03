@@ -2,6 +2,7 @@
 
 import { authenticate } from "@/lib/users";
 import { saveSession } from "@/lib/auth";
+import { apiClient, ApiClientError } from "@/lib/api-client";
 import {
   AlertCircle,
   ArrowRight,
@@ -141,50 +142,34 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
-      const response = await fetch(`${apiUrl}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          identificador: cleanDoc,
-          password: cleanPass,
-          tipoDocumento: docType,
-        }),
+      const authData = await apiClient.post("/auth/login", {
+        identificador: cleanDoc,
+        password: cleanPass,
+        tipoDocumento: docType,
       });
 
-      const resJson = await response.json();
+      if (authData?.accessToken && authData?.user) {
+        const userPayload = {
+          ...authData.user,
+          tipoDocumento: authData.user.tipoDocumento || docType || "CC",
+          numeroDocumento: authData.user.numeroDocumento || cleanDoc,
+        };
+        saveSession(authData.accessToken, userPayload);
 
-      if (!response.ok) {
-        const errorMsg =
-          resJson?.message ||
-          (Array.isArray(resJson?.errors) ? resJson.errors.join(", ") : null) ||
-          "Credenciales incorrectas.";
-        setError(errorMsg);
-        setIsLoading(false);
-        return;
-      }
-
-      if (typeof window !== "undefined" && resJson.data) {
-        const authData = resJson.data;
-        if (authData.accessToken && authData.user) {
-          const userPayload = {
-            ...authData.user,
-            tipoDocumento: authData.user.tipoDocumento || docType || "CC",
-            numeroDocumento: authData.user.numeroDocumento || cleanDoc,
-          };
-          saveSession(authData.accessToken, userPayload);
-        }
-
-        if (authData.user?.rol === "admin") {
+        if (authData.user.rol === "admin") {
           window.location.href = "/admin";
         } else {
           window.location.href = "/aprendiz";
         }
       }
-    } catch (networkErr) {
-      console.warn("Backend no disponible, ejecutando autenticación local:", networkErr);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setError(err.message);
+        setIsLoading(false);
+        return;
+      }
+
+      console.warn("Backend no disponible, ejecutando autenticación local:", err);
       const authResult = authenticate(cleanDoc, cleanPass);
 
       if (!authResult.success) {
@@ -194,12 +179,7 @@ export default function LoginPage() {
       }
 
       if (typeof window !== "undefined" && authResult.user) {
-        try {
-          localStorage.setItem("sena_user", JSON.stringify(authResult.user));
-        } catch {
-          // ignore
-        }
-
+        saveSession("demo_token", authResult.user);
         if (authResult.user.rol === "admin") {
           window.location.href = "/admin";
         } else {

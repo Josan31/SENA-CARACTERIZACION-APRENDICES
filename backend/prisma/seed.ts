@@ -171,13 +171,14 @@ type AprendizDemo = {
   previaSena: boolean;
   motivacion: string;
   trabaja: boolean;
+  tipoDoc?: string;
   lugarTrabajo?: string;
   estadoCaracterizacion: 'completa' | 'en_curso';
 };
 
 const APRENDICES_DEMO: AprendizDemo[] = [
   {
-    documento: '109989001', nombre: 'Aprendiz Uno Demo', fechaNac: '2004-03-12', ciudad: 'Palmira',
+    documento: '109989001', tipoDoc: 'TI - Tarjeta de Identidad', nombre: 'Aprendiz Uno Demo', fechaNac: '2004-03-12', ciudad: 'Palmira',
     direccion: 'Calle ficticia 1 #2-03', estrato: 'Estrato 2', sexo: 'Mujer', lgbtiq: false,
     estadoCivil: 'Soltero(a)', correoPersonal: 'demo1.ficticio@ejemplo.com', correoInst: 'demo1@soy.sena.edu.co',
     telefono: '3001110001', acudiente: 'Acudiente Uno Demo', telAcudiente: '3001111001', parentescoAcudiente: 'Madre',
@@ -190,7 +191,7 @@ const APRENDICES_DEMO: AprendizDemo[] = [
     motivacion: 'Vocación y gusto por la disciplina', trabaja: false, estadoCaracterizacion: 'completa',
   },
   {
-    documento: '109989002', nombre: 'Aprendiz Dos Demo', fechaNac: '2002-11-02', ciudad: 'Pereira',
+    documento: '109989002', tipoDoc: 'CC - Cédula de Ciudadanía', nombre: 'Aprendiz Dos Demo', fechaNac: '2002-11-02', ciudad: 'Pereira',
     direccion: 'Carrera ficticia 4 #5-06', estrato: 'Estrato 3', sexo: 'Hombre', lgbtiq: false,
     estadoCivil: 'Unión Libre', correoPersonal: 'demo2.ficticio@ejemplo.com', correoInst: 'demo2@soy.sena.edu.co',
     telefono: '3001110002', acudiente: 'Acudiente Dos Demo', telAcudiente: '3001111002', parentescoAcudiente: 'Cónyuge / Pareja',
@@ -206,7 +207,7 @@ const APRENDICES_DEMO: AprendizDemo[] = [
     estadoCaracterizacion: 'completa',
   },
   {
-    documento: '109989003', nombre: 'Aprendiz Tres Demo', fechaNac: '2005-06-25', ciudad: 'Cali',
+    documento: '109989003', tipoDoc: 'CE - Cédula de Extranjería', nombre: 'Aprendiz Tres Demo', fechaNac: '2005-06-25', ciudad: 'Cali',
     direccion: 'Avenida ficticia 7 #8-09', estrato: 'Estrato 1', sexo: 'Mujer', lgbtiq: true, orientacion: 'Bisexual',
     estadoCivil: 'Soltero(a)', correoPersonal: 'demo3.ficticio@ejemplo.com', correoInst: 'demo3@soy.sena.edu.co',
     telefono: '3001110003', acudiente: 'Acudiente Tres Demo', telAcudiente: '3001111003', parentescoAcudiente: 'Padre',
@@ -287,11 +288,13 @@ async function crearAprendizDemo(
   // Aprendiz (edad NO se guarda: se calcula desde fecha_nacimiento)
   const aprendiz = await tx.aprendiz.upsert({
     where: { numeroDocumento: a.documento },
-    update: {},
+    update: {
+      tipoDocumentoId: cat(mapa, 'tipo_documento', a.tipoDoc || 'CC - Cédula de Ciudadanía'),
+    },
     create: {
       usuario: a.documento, // mismo documento (convención del schema)
       nombreCompleto: a.nombre,
-      tipoDocumentoId: cat(mapa, 'tipo_documento', a.documento.startsWith('108') ? 'TI - Tarjeta de Identidad' : 'CC - Cédula de Ciudadanía'),
+      tipoDocumentoId: cat(mapa, 'tipo_documento', a.tipoDoc || 'CC - Cédula de Ciudadanía'),
       numeroDocumento: a.documento,
       fechaNacimiento: new Date(a.fechaNac),
       sexoId: cat(mapa, 'sexo', a.sexo),
