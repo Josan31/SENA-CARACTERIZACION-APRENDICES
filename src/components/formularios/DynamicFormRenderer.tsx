@@ -16,6 +16,7 @@ import {
   getRespuestasModulo,
   saveRespuestasModulo,
 } from "@/lib/formulariosStore";
+import { getUser } from "@/lib/auth";
 
 interface DynamicFormRendererProps {
   moduloId: string;
@@ -25,7 +26,7 @@ interface DynamicFormRendererProps {
   linkVolver?: string;
   linkSiguiente?: string;
   textoBotonSiguiente?: string;
-  onSuccess?: () => void;
+  onSuccess?: (respuestasGuardadas?: Record<string, any>) => void;
   esVistaPrevia?: boolean;
 }
 
@@ -51,6 +52,21 @@ export default function DynamicFormRenderer({
     const list = getPreguntasModulo(moduloId);
     setPreguntas(list.filter((p) => p.activo !== false));
     const guardadas = getRespuestasModulo(moduloId);
+
+    if (moduloId === "basica") {
+      const user = getUser();
+      if (user) {
+        if (!guardadas.nombre && user.nombre) guardadas.nombre = user.nombre;
+        if (!guardadas.numDoc && user.numeroDocumento) guardadas.numDoc = user.numeroDocumento;
+        if (!guardadas.tipoDoc && user.tipoDocumento) {
+          if (user.tipoDocumento === "TI") guardadas.tipoDoc = "TI - Tarjeta de Identidad";
+          else if (user.tipoDocumento === "CC") guardadas.tipoDoc = "CC - Cédula de Ciudadanía";
+          else if (user.tipoDocumento === "CE") guardadas.tipoDoc = "CE - Cédula de Extranjería";
+          else if (user.tipoDocumento === "PPT") guardadas.tipoDoc = "PPT - Permiso por Protección Temporal";
+        }
+        if (!guardadas.correoPersonal && user.correo) guardadas.correoPersonal = user.correo;
+      }
+    }
     setRespuestas(guardadas);
   };
 
@@ -113,7 +129,7 @@ export default function DynamicFormRenderer({
     setGuardadoExito(true);
 
     if (onSuccess) {
-      onSuccess();
+      onSuccess(respuestas);
     }
 
     setTimeout(() => {

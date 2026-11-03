@@ -21,6 +21,9 @@ import FormularioFormativo from "@/components/formularios/FormularioFormativo";
 import FormularioAsesoriaDirecta from "@/components/formularios/FormularioAsesoriaDirecta";
 import Formulario10Finalizado from "@/components/formularios/Formulario10Finalizado";
 import DynamicFormRenderer from "@/components/formularios/DynamicFormRenderer";
+import { getUser } from "@/lib/auth";
+import { getRespuestasModulo } from "@/lib/formulariosStore";
+import { guardarCaracterizacionCompleta } from "@/lib/caracterizacion";
 
 /* ──────────────────────────────────────────────────────────────────────────
    ILUSTRACIONES VECTORIALES SVG EXACTAS AL MOCKUP DEL USUARIO
@@ -359,6 +362,67 @@ function AprendizFormulariosContent() {
   const router = useRouter();
   const [selectedForm, setSelectedForm] = useState<ActiveForm>(null);
   const [showRecaracterizacionInfo, setShowRecaracterizacionInfo] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
+  const [radicadoGenerado, setRadicadoGenerado] = useState<{
+    radicado: string;
+    fechaRadicado: string;
+    nombreAprendiz: string;
+    documento: string;
+    programa: string;
+    ficha: string;
+    centro: string;
+  } | null>(null);
+
+  const handleFinalizarCaracterizacion = async () => {
+    setIsSubmitting(true);
+    setErrorEnvio(null);
+
+    try {
+      const basica = getRespuestasModulo("basica");
+      const salud = getRespuestasModulo("salud");
+      const socioeconomica = getRespuestasModulo("socioeconomica");
+      const formativo = getRespuestasModulo("formativo");
+      const user = getUser();
+
+      const res = await guardarCaracterizacionCompleta(
+        { basica, salud, socioeconomica, formativo },
+        {
+          numeroDocumento: user?.numeroDocumento || basica.numDoc || "109989001",
+          nombre: user?.nombre || basica.nombre || "Aprendiz",
+          tipoDocumento: user?.tipoDocumento || basica.tipoDoc || "TI",
+        }
+      );
+
+      const fechaLegible = new Date().toLocaleDateString("es-CO", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      setRadicadoGenerado({
+        radicado: res.radicado,
+        fechaRadicado: fechaLegible,
+        nombreAprendiz: user?.nombre || basica.nombre || "Aprendiz SENA",
+        documento: `${user?.tipoDocumento || basica.tipoDoc || "Doc."} ${user?.numeroDocumento || basica.numDoc || ""}`,
+        programa: user?.programa || "Análisis y Desarrollo de Software",
+        ficha: user?.ficha || "2670142",
+        centro: user?.centro || "Centro de Teleinformática y Producción Industrial - Regional Cauca",
+      });
+
+      setSelectedForm("reportes");
+    } catch (err: any) {
+      console.error("Error al finalizar caracterización:", err);
+      setErrorEnvio(
+        err.message ||
+          "Ocurrió un error al guardar la caracterización en el servidor. Por favor verifica tus respuestas."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // ════════════════════════════════════════════════════════════════════════
   // MODO DILIGENCIAMIENTO: Si el aprendiz hace clic en una tarjeta
@@ -383,6 +447,13 @@ function AprendizFormulariosContent() {
               <span>Diligenciamiento de Módulo</span>
             </div>
           </div>
+
+          {errorEnvio && (
+            <div className="flex items-center gap-3 rounded-2xl bg-rose-50 border border-rose-200 p-4 text-xs font-bold text-rose-800">
+              <AlertTriangle className="text-rose-600 shrink-0" size={18} />
+              <span>{errorEnvio}</span>
+            </div>
+          )}
 
           {/* Formulario Activo Renderizado Sincronizado Par en Par */}
           <main className="rounded-3xl bg-white p-4 sm:p-8 shadow-sm border border-slate-200">
@@ -437,12 +508,20 @@ function AprendizFormulariosContent() {
                 subtituloModulo="Actualiza tu trayectoria académica, motivaciones y esquema de vacunación biológica."
                 numeroPaso="4 de 4"
                 linkVolver=""
-                textoBotonSiguiente="Guardar y Finalizar Caracterización"
-                onSuccess={() => setSelectedForm("reportes")}
+                textoBotonSiguiente={isSubmitting ? "Guardando en servidores del SENA..." : "Guardar y Finalizar Caracterización"}
+                onSuccess={() => handleFinalizarCaracterizacion()}
               />
             )}
             {selectedForm === "reportes" && (
-              <Formulario10Finalizado radicado="RAD-SENA-2026-789412" />
+              <Formulario10Finalizado
+                radicado={radicadoGenerado?.radicado}
+                fechaRadicado={radicadoGenerado?.fechaRadicado}
+                nombreAprendiz={radicadoGenerado?.nombreAprendiz}
+                documento={radicadoGenerado?.documento}
+                programa={radicadoGenerado?.programa}
+                ficha={radicadoGenerado?.ficha}
+                centro={radicadoGenerado?.centro}
+              />
             )}
           </main>
 

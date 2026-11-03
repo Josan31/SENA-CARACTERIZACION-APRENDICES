@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   ArrowLeft,
   BookOpen,
@@ -20,7 +21,13 @@ import {
   Star,
   UserRound,
   UsersRound,
+  Loader2,
+  AlertCircle,
+  Activity,
+  Award,
 } from "lucide-react";
+import { obtenerMiCaracterizacion, MiCaracterizacionResponse } from "@/lib/caracterizacion";
+import { getUser } from "@/lib/auth";
 
 type InfoRowProps = {
   icon: React.ReactNode;
@@ -30,7 +37,7 @@ type InfoRowProps = {
 
 function InfoRow({ icon, label, value }: InfoRowProps) {
   return (
-    <div className="grid grid-cols-[22px_minmax(0,1fr)] items-start gap-3 py-2 sm:grid-cols-[24px_minmax(0,1fr)] sm:gap-4">
+    <div className="grid grid-cols-[22px_minmax(0,1fr)] items-start gap-3 py-2.5 sm:grid-cols-[24px_minmax(0,1fr)] sm:gap-4 border-b border-[#edf5f3] last:border-b-0">
       <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-lg bg-[#e8f6ef] text-[#087d4b]">
         {icon}
       </span>
@@ -60,253 +67,322 @@ function SectionHeader({ icon, title }: SectionHeaderProps) {
 
 function EditLabel() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#b8ead4] bg-white px-3 py-1.5 text-xs font-bold text-[#087d4b]">
+    <Link
+      href="/aprendiz/formularios"
+      className="inline-flex items-center gap-1.5 rounded-full border border-[#b8ead4] bg-white px-3 py-1.5 text-xs font-bold text-[#087d4b] hover:bg-emerald-50 transition-all"
+    >
       <Pencil size={12} />
-      Editar
-    </span>
+      Actualizar
+    </Link>
   );
 }
 
-function ProfileAvatar({ large = false }: { large?: boolean }) {
+function ProfileAvatar({ nombre = "A", large = false }: { nombre?: string; large?: boolean }) {
+  const initial = nombre ? nombre.charAt(0).toUpperCase() : "A";
   return (
     <div
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gradient-to-br from-[#a8e8c9] via-[#6dd4a7] to-[#149c6b] shadow-sm ${
-        large ? "h-24 w-24 sm:h-28 sm:w-28" : "h-16 w-16"
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gradient-to-br from-[#a8e8c9] via-[#6dd4a7] to-[#149c6b] shadow-sm text-white font-extrabold ${
+        large ? "h-24 w-24 sm:h-28 sm:w-28 text-3xl" : "h-16 w-16 text-xl"
       }`}
-      aria-label="Avatar de perfil de ejemplo"
     >
-      <svg viewBox="0 0 100 100" className="h-full w-full" fill="none" aria-hidden="true">
-        <circle cx="50" cy="50" r="49" fill="#69d6a6" />
-        <path d="M13 100c2-21 15-31 37-31s35 10 37 31H13Z" fill="#07875b" />
-        <path d="M38 62h24v16c-6 8-18 8-24 0V62Z" fill="#f3b982" />
-        <ellipse cx="50" cy="43" rx="23" ry="27" fill="#ffc996" />
-        <path d="M27 43c-3-20 8-32 24-32 17 0 27 12 23 31-5-3-9-9-10-16-8 8-21 11-36 10l-1 7Z" fill="#073b46" />
-        <path d="M29 45c-4-3-6 0-4 7 1 4 3 6 6 5l-2-12Zm42 0c4-3 6 0 4 7-1 4-3 6-6 5l2-12Z" fill="#ffc996" />
-        <path d="M35 77c5 5 10 7 15 7s10-2 15-7l15 7 7 16H13l7-16 15-7Z" fill="#087d4b" />
-      </svg>
-      {large && (
-        <span className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#087d4b] text-white">
-          <Camera size={13} />
-        </span>
-      )}
+      <span>{initial}</span>
     </div>
   );
 }
 
 export default function PerfilAprendizPage() {
+  const [activeTab, setActiveTab] = useState("personal");
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<MiCaracterizacionResponse | null>(null);
+
+  useEffect(() => {
+    async function cargarPerfil() {
+      try {
+        setLoading(true);
+        const res = await obtenerMiCaracterizacion();
+        setData(res);
+      } catch (err) {
+        console.warn("No se pudo cargar caracterización activa:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    cargarPerfil();
+  }, []);
+
+  const user = getUser();
+  const aprendiz = data?.aprendiz;
+  const caracterizacion = data?.caracterizacion;
+  const localizacion = caracterizacion?.localizaciones?.[0];
+  const salud = caracterizacion?.saludes?.[0];
+  const covid = caracterizacion?.covids19?.[0];
+  const socio = caracterizacion?.situaciones?.[0];
+  const perfil = caracterizacion?.perfiles?.[0];
+
+  const nombreMostrado = aprendiz?.nombreCompleto || user?.nombre || "Aprendiz SENA";
+  const docTipo = aprendiz?.tipoDocumento?.valor || user?.tipoDocumento || "CC";
+  const docNum = aprendiz?.numeroDocumento || user?.numeroDocumento || "—";
+  const fechaNac = aprendiz?.fechaNacimiento
+    ? new Date(aprendiz.fechaNacimiento).toLocaleDateString("es-CO", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "—";
+
+  // Calcular edad
+  let edadTexto = "—";
+  if (aprendiz?.fechaNacimiento) {
+    const diff = Date.now() - new Date(aprendiz.fechaNacimiento).getTime();
+    const ageDate = new Date(diff);
+    edadTexto = `${Math.abs(ageDate.getUTCFullYear() - 1970)} años`;
+  }
+
   const tabs = [
-    { title: "Información personal", icon: <UserRound size={16} />, active: true },
-    { title: "Información de contacto", icon: <Mail size={16} />, active: false },
-    { title: "Formación académica", icon: <GraduationCap size={17} />, active: false },
-    { title: "Otros", icon: <Star size={16} />, active: false },
+    { id: "personal", title: "Información personal", icon: <UserRound size={16} /> },
+    { id: "contacto", title: "Contacto y residencia", icon: <Mail size={16} /> },
+    { id: "formacion", title: "Formación académica", icon: <GraduationCap size={17} /> },
+    { id: "salud", title: "Salud y bienestar", icon: <Activity size={16} /> },
   ];
 
   return (
-    <main className="min-h-screen bg-[#f3faf7] px-4 py-6 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#f3faf7] px-4 py-6 sm:px-6 lg:px-8 font-primary">
       <div className="mx-auto max-w-6xl">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-full border border-[#dcefe7] bg-white px-3 py-2 text-xs font-bold text-[#174d4b] shadow-sm"
+          <Link
+            href="/aprendiz"
+            className="inline-flex items-center gap-2 rounded-full border border-[#dcefe7] bg-white px-4 py-2 text-xs font-bold text-[#174d4b] shadow-sm hover:bg-slate-50 transition-all cursor-pointer"
           >
             <ArrowLeft size={15} />
-            Volver
-          </button>
+            Volver al inicio
+          </Link>
 
-          <span className="inline-flex items-center rounded-full border border-[#dcefe7] bg-[#edf9f3] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#087d4b]">
+          <span className="inline-flex items-center rounded-full border border-[#dcefe7] bg-[#edf9f3] px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#087d4b]">
             Perfil del aprendiz
           </span>
         </div>
 
         <div className="overflow-hidden rounded-[28px] border border-[#dcefe7] bg-white shadow-[0_12px_30px_rgba(12,73,59,0.08)]">
-          <header className="border-b border-[#edf4f1] bg-gradient-to-r from-[#e8f8f3] to-white px-4 py-5 sm:px-6">
+          <header className="border-b border-[#edf4f1] bg-gradient-to-r from-[#e8f8f3] to-white px-4 py-6 sm:px-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <ProfileAvatar large />
+              <div className="flex items-center gap-5">
+                <ProfileAvatar nombre={nombreMostrado} large />
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#5a9a85]">
-                    Aprendiz
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5a9a85]">
+                      Aprendiz Matriculado
+                    </span>
+                    {caracterizacion?.radicado && (
+                      <span className="rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 px-2.5 py-0.5 text-[10px] font-black">
+                        {caracterizacion.radicado}
+                      </span>
+                    )}
+                  </div>
                   <h1 className="mt-1 text-xl font-black text-[#174d4b] sm:text-2xl">
-                    Ana Sofía López Ramírez
+                    {nombreMostrado}
                   </h1>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-[#4a7f6d]">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#dcefe7] bg-white px-2.5 py-1">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#dcefe7] bg-white px-3 py-1 shadow-xs">
                       <GraduationCap size={13} />
-                      Tecnología en análisis y desarrollo de software
+                      {user?.programa || "Análisis y Desarrollo de Software"}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#dcefe7] bg-white px-2.5 py-1">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#dcefe7] bg-white px-3 py-1 shadow-xs">
                       <BookOpen size={13} />
-                      Ficha 2458967
+                      Ficha {user?.ficha || "2670142"}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#087d4b] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#066d42]"
+              <Link
+                href="/aprendiz/formularios"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#087d4b] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#066d42] shrink-0"
               >
                 <Pencil size={14} />
-                Editar perfil
-              </button>
+                Actualizar Caracterización
+              </Link>
             </div>
           </header>
 
-          <div className="px-4 py-5 sm:px-6">
-            <div className="mb-4">
+          <div className="px-4 py-6 sm:px-8">
+            <div className="mb-5">
               <div className="flex items-center gap-3 rounded-2xl border border-[#d8f1e9] bg-gradient-to-r from-[#e8f8f3] to-[#f1fbf8] p-4">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#087d4b] shadow-sm">
-                  <Sprout size={25} />
+                  <Sprout size={24} />
                 </span>
                 <div>
                   <p className="text-sm font-bold leading-snug text-[#367d70]">
                     “El conocimiento es la llave para un mejor futuro”
                   </p>
-                  <p className="mt-1 text-xs font-semibold text-[#5d9c8c]">SENA</p>
+                  <p className="mt-0.5 text-xs font-semibold text-[#5d9c8c]">
+                    SENA — Regional y Centro de Formación
+                  </p>
                 </div>
               </div>
             </div>
 
+            {/* Pestañas de Navegación */}
             <nav
               aria-label="Secciones del perfil"
-              className="flex gap-1 overflow-x-auto border-b border-[#e4f1ef] py-2"
+              className="flex gap-2 overflow-x-auto border-b border-[#e4f1ef] py-1"
             >
               {tabs.map((tab) => (
-                <div
-                  key={tab.title}
-                  className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-xs font-bold sm:px-4 sm:text-sm ${
-                    tab.active
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  type="button"
+                  className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold sm:text-sm transition-all cursor-pointer ${
+                    activeTab === tab.id
                       ? "border-[#087d4b] text-[#087d4b]"
-                      : "border-transparent text-slate-500"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
                   }`}
                 >
                   {tab.icon}
                   {tab.title}
-                </div>
+                </button>
               ))}
             </nav>
 
-            <div className="grid gap-4 pt-5 lg:grid-cols-2 lg:gap-5">
-              <div className="space-y-4">
-                <section className="rounded-2xl border border-[#e0f1ee] bg-white/90 p-4 shadow-[0_3px_12px_rgba(30,110,100,0.04)] sm:p-5">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <SectionHeader icon={<Camera size={16} />} title="Foto de perfil" />
-                    <EditLabel />
-                  </div>
-                  <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
-                    <ProfileAvatar large />
-                    <div className="w-full flex-1">
-                      <div className="rounded-xl bg-[#eaf8f4] px-4 py-3 text-xs leading-relaxed text-[#52877c]">
-                        <span className="mb-1 flex items-center gap-2 font-bold text-[#087d4b]">
-                          <ShieldCheck size={14} />
-                          Foto de perfil
-                        </span>
-                        La imagen de perfil se mostrará en tu cuenta del aprendiz.
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                <Loader2 className="animate-spin text-[#087d4b]" size={32} />
+                <p className="text-xs font-bold text-slate-500">Cargando datos del perfil...</p>
+              </div>
+            ) : (
+              <div className="grid gap-6 pt-6 lg:grid-cols-2">
+                {/* Columna Izquierda según Pestaña */}
+                <div className="space-y-6">
+                  {activeTab === "personal" && (
+                    <section className="rounded-2xl border border-[#e0f1ee] bg-white p-5 shadow-xs">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <SectionHeader icon={<UserRound size={16} />} title="Información de Identidad" />
+                        <EditLabel />
                       </div>
-                      <span className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#8bdcb9] px-4 py-2 text-xs font-bold text-[#087d4b]">
-                        <Camera size={14} />
-                        Cambiar foto
-                      </span>
-                    </div>
-                  </div>
-                </section>
+                      <div className="divide-y divide-[#edf5f3]">
+                        <InfoRow icon={<FileText size={15} />} label="Tipo de documento" value={docTipo} />
+                        <InfoRow icon={<FileText size={15} />} label="Número de documento" value={docNum} />
+                        <InfoRow icon={<CalendarDays size={15} />} label="Fecha de nacimiento" value={fechaNac} />
+                        <InfoRow icon={<Clock3 size={15} />} label="Edad" value={edadTexto} />
+                        <InfoRow icon={<UsersRound size={15} />} label="Sexo biológico" value={aprendiz?.sexo?.valor || "—"} />
+                        <InfoRow icon={<Heart size={15} />} label="Estado civil" value={aprendiz?.estadoCivil?.valor || "—"} />
+                        <InfoRow icon={<Star size={15} />} label="Comunidad LGBTIQ+" value={aprendiz?.seReconoceLgbtiq ? "Sí" : "No"} />
+                      </div>
+                    </section>
+                  )}
 
-                <section className="rounded-2xl border border-[#e0f1ee] bg-white/90 p-4 shadow-[0_3px_12px_rgba(30,110,100,0.04)] sm:p-5">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <SectionHeader icon={<UserRound size={16} />} title="Información personal" />
-                    <EditLabel />
-                  </div>
-                  <div className="divide-y divide-[#edf5f3]">
-                    <InfoRow
-                      icon={<FileText size={15} />}
-                      label="Tipo de documento"
-                      value="Documento de identidad"
-                    />
-                    <InfoRow
-                      icon={<FileText size={15} />}
-                      label="Número de documento"
-                      value="••••••••••"
-                    />
-                    <InfoRow
-                      icon={<CalendarDays size={15} />}
-                      label="Fecha de nacimiento"
-                      value="DD/MM/AAAA"
-                    />
-                    <InfoRow icon={<Clock3 size={15} />} label="Edad" value="—" />
-                    <InfoRow icon={<UsersRound size={15} />} label="Sexo" value="—" />
-                    <InfoRow icon={<Heart size={15} />} label="Estado civil" value="—" />
-                  </div>
-                </section>
+                  {activeTab === "contacto" && (
+                    <section className="rounded-2xl border border-[#e0f1ee] bg-white p-5 shadow-xs">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <SectionHeader icon={<Phone size={16} />} title="Información de Contacto" />
+                        <EditLabel />
+                      </div>
+                      <div className="divide-y divide-[#edf5f3]">
+                        <InfoRow icon={<Mail size={15} />} label="Correo personal" value={aprendiz?.correoPersonal || user?.correo || "—"} />
+                        <InfoRow icon={<Mail size={15} />} label="Correo institucional" value={aprendiz?.correoInstitucional || "—"} />
+                        <InfoRow icon={<Phone size={15} />} label="Teléfono de contacto" value={aprendiz?.telefono || "—"} />
+                        <InfoRow icon={<MapPin size={15} />} label="Dirección de residencia" value={localizacion?.direccion || "—"} />
+                        <InfoRow icon={<MapPin size={15} />} label="Ciudad / Municipio" value={localizacion?.ciudad?.valor || "—"} />
+                        <InfoRow icon={<MapPin size={15} />} label="Estrato socioeconómico" value={localizacion?.estrato?.valor || "—"} />
+                      </div>
+                    </section>
+                  )}
+
+                  {activeTab === "formacion" && (
+                    <section className="rounded-2xl border border-[#e0f1ee] bg-white p-5 shadow-xs">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <SectionHeader icon={<GraduationCap size={16} />} title="Matrícula y Trayectoria" />
+                        <EditLabel />
+                      </div>
+                      <div className="divide-y divide-[#edf5f3]">
+                        <InfoRow icon={<BookOpen size={15} />} label="Programa SENA" value={user?.programa || "Análisis y Desarrollo de Software"} />
+                        <InfoRow icon={<FileText size={15} />} label="Ficha de matrícula" value={user?.ficha || "2670142"} />
+                        <InfoRow icon={<Award size={15} />} label="Nivel formación previo" value={perfil?.nivelFormacionPrevio?.valor || "—"} />
+                        <InfoRow icon={<BriefcaseBusiness size={15} />} label="Formación previa SENA" value={perfil?.formacionPreviaSena ? "Sí" : "No"} />
+                        <InfoRow icon={<Star size={15} />} label="Motivación de ingreso" value={perfil?.motivacion?.valor || "—"} />
+                      </div>
+                    </section>
+                  )}
+
+                  {activeTab === "salud" && (
+                    <section className="rounded-2xl border border-[#e0f1ee] bg-white p-5 shadow-xs">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <SectionHeader icon={<Activity size={16} />} title="Afiliación y Sisbén" />
+                        <EditLabel />
+                      </div>
+                      <div className="divide-y divide-[#edf5f3]">
+                        <InfoRow icon={<Activity size={15} />} label="EPS Afiliada" value={salud?.eps?.valor || "—"} />
+                        <InfoRow icon={<Activity size={15} />} label="Régimen de salud" value={salud?.regimenSalud?.valor || "—"} />
+                        <InfoRow icon={<FileText size={15} />} label="Estado Sisbén" value={salud?.sisbenEstado?.valor || "—"} />
+                        <InfoRow icon={<FileText size={15} />} label="Grupo Sisbén" value={salud?.grupoSisben?.valor || "No aplica"} />
+                        <InfoRow icon={<Activity size={15} />} label="Discapacidad" value={salud?.presentaDiscapacidad ? (salud?.tipoDiscapacidad?.valor || "Sí") : "No"} />
+                      </div>
+                    </section>
+                  )}
+                </div>
+
+                {/* Columna Derecha según Pestaña */}
+                <div className="space-y-6">
+                  {activeTab === "personal" && (
+                    <section className="rounded-2xl border border-[#e0f1ee] bg-white p-5 shadow-xs">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <SectionHeader icon={<UsersRound size={16} />} title="Contacto de Emergencia" />
+                        <EditLabel />
+                      </div>
+                      <div className="divide-y divide-[#edf5f3]">
+                        <InfoRow icon={<UserRound size={15} />} label="Nombre de acudiente" value={aprendiz?.contactoEmergenciaNombre || "—"} />
+                        <InfoRow icon={<Phone size={15} />} label="Teléfono acudiente" value={aprendiz?.contactoEmergenciaTelefono || "—"} />
+                        <InfoRow icon={<Heart size={15} />} label="Parentesco" value={aprendiz?.contactoEmergenciaParentesco?.valor || "—"} />
+                      </div>
+                    </section>
+                  )}
+
+                  {activeTab === "contacto" && (
+                    <section className="rounded-2xl border border-[#e0f1ee] bg-white p-5 shadow-xs">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <SectionHeader icon={<BriefcaseBusiness size={16} />} title="Contexto Socioeconómico" />
+                        <EditLabel />
+                      </div>
+                      <div className="divide-y divide-[#edf5f3]">
+                        <InfoRow icon={<BriefcaseBusiness size={15} />} label="Sustento del hogar" value={socio?.sustentoPrincipal?.valor || "—"} />
+                        <InfoRow icon={<Star size={15} />} label="Jefe de hogar" value={socio?.jefeHogar ? "Sí" : "No"} />
+                        <InfoRow icon={<FileText size={15} />} label="Rango de ingresos" value={socio?.rangoIngresos?.valor || "—"} />
+                        <InfoRow icon={<FileText size={15} />} label="Fuente de ingresos" value={socio?.fuenteIngresos?.valor || "—"} />
+                        <InfoRow icon={<UsersRound size={15} />} label="Grupo étnico" value={socio?.grupoEtnico?.valor || "—"} />
+                      </div>
+                    </section>
+                  )}
+
+                  {activeTab === "formacion" && (
+                    <section className="rounded-2xl border border-[#e0f1ee] bg-white p-5 shadow-xs">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <SectionHeader icon={<BriefcaseBusiness size={16} />} title="Perfil Laboral Actual" />
+                        <EditLabel />
+                      </div>
+                      <div className="divide-y divide-[#edf5f3]">
+                        <InfoRow icon={<BriefcaseBusiness size={15} />} label="¿Trabaja actualmente?" value={perfil?.trabajaActualmente ? "Sí" : "No"} />
+                        <InfoRow icon={<ShieldCheck size={15} />} label="Estado caracterización" value={caracterizacion?.estado === "completa" ? "Al día (Vigente)" : "Pendiente"} />
+                        <InfoRow icon={<FileText size={15} />} label="Versión de registro" value={caracterizacion ? `Versión ${caracterizacion.version}` : "—"} />
+                      </div>
+                    </section>
+                  )}
+
+                  {activeTab === "salud" && (
+                    <section className="rounded-2xl border border-[#e0f1ee] bg-white p-5 shadow-xs">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <SectionHeader icon={<ShieldCheck size={16} />} title="Vacunación COVID-19" />
+                        <EditLabel />
+                      </div>
+                      <div className="divide-y divide-[#edf5f3]">
+                        <InfoRow icon={<ShieldCheck size={15} />} label="¿Vacunado?" value={covid?.vacunado ? "Sí" : "No"} />
+                        <InfoRow icon={<Activity size={15} />} label="Biológico / Vacuna" value={covid?.vacuna?.valor || "No aplica"} />
+                        <InfoRow icon={<FileText size={15} />} label="Número de dosis" value={covid?.dosis != null ? `${covid.dosis} dosis` : "—"} />
+                        <InfoRow icon={<ShieldCheck size={15} />} label="Esquema completo" value={covid?.esquemaCompleto ? "Sí" : "No"} />
+                      </div>
+                    </section>
+                  )}
+                </div>
               </div>
-
-              <div className="space-y-4">
-                <section className="rounded-2xl border border-[#e0f1ee] bg-white/90 p-4 shadow-[0_3px_12px_rgba(30,110,100,0.04)] sm:p-5">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <SectionHeader icon={<Phone size={16} />} title="Información de contacto" />
-                    <EditLabel />
-                  </div>
-                  <div className="divide-y divide-[#edf5f3]">
-                    <InfoRow
-                      icon={<Mail size={15} />}
-                      label="Correo electrónico"
-                      value="correo@ejemplo.com"
-                    />
-                    <InfoRow
-                      icon={<Phone size={15} />}
-                      label="Teléfono"
-                      value="Número de contacto"
-                    />
-                    <InfoRow
-                      icon={<MapPin size={15} />}
-                      label="Dirección de residencia"
-                      value="Ciudad, departamento"
-                    />
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-[#e0f1ee] bg-white/90 p-4 shadow-[0_3px_12px_rgba(30,110,100,0.04)] sm:p-5">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <SectionHeader icon={<GraduationCap size={16} />} title="Formación académica" />
-                    <EditLabel />
-                  </div>
-                  <div className="divide-y divide-[#edf5f3]">
-                    <InfoRow
-                      icon={<BookOpen size={15} />}
-                      label="Programa de formación"
-                      value="Nombre del programa"
-                    />
-                    <InfoRow
-                      icon={<FileText size={15} />}
-                      label="Número de ficha"
-                      value="Número de ficha"
-                    />
-                    <InfoRow
-                      icon={<CalendarDays size={15} />}
-                      label="Jornada"
-                      value="Jornada de formación"
-                    />
-                    <InfoRow
-                      icon={<BriefcaseBusiness size={15} />}
-                      label="Modalidad"
-                      value="Modalidad de formación"
-                    />
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-[#e0f1ee] bg-white/90 p-4 shadow-[0_3px_12px_rgba(30,110,100,0.04)] sm:p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <SectionHeader icon={<span className="text-lg leading-none">+</span>} title="Información adicional" />
-                    <EditLabel />
-                  </div>
-                  <p className="pl-10 pt-2 text-xs leading-relaxed text-slate-500">
-                    Aquí se podrá mostrar información adicional del perfil.
-                  </p>
-                </section>
-              </div>
-            </div>
-
-
+            )}
           </div>
         </div>
       </div>
