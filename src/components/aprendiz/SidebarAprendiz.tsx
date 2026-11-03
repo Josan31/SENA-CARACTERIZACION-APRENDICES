@@ -1,5 +1,6 @@
-import { clearSession } from "@/lib/auth";
 "use client";
+
+import { clearSession } from "@/lib/auth";
 
 import React from "react";
 import Link from "next/link";
