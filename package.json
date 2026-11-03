@@ -9,6 +9,7 @@
     "db:seed": "npm --prefix backend run prisma:seed",
     "db:migrate": "npm --prefix backend run prisma:migrate",
     "test:caracterizaciones": "node scripts/test-caracterizaciones.mjs",
+    "test:usuarios": "node scripts/test-usuarios.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

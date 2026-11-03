@@ -33,6 +33,12 @@ export class AuthService {
     const usuarioSena = await this.buscarUsuarioFuncionario(cleanId);
 
     if (usuarioSena) {
+      if (!usuarioSena.activo) {
+        throw new UnauthorizedException(
+          'Su cuenta se encuentra inactiva o deshabilitada. Contacte al Administrador del Sistema.',
+        );
+      }
+
       const passwordValida = await this.verificarPasswordFuncionario(
         cleanPass,
         usuarioSena.password,
