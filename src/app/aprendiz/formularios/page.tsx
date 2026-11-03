@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,7 +23,17 @@ import Formulario10Finalizado from "@/components/formularios/Formulario10Finaliz
 import DynamicFormRenderer from "@/components/formularios/DynamicFormRenderer";
 import { getUser } from "@/lib/auth";
 import { getRespuestasModulo } from "@/lib/formulariosStore";
-import { guardarCaracterizacionCompleta } from "@/lib/caracterizacion";
+import {
+  guardarCaracterizacionCompleta,
+  obtenerMiCaracterizacion,
+  MiCaracterizacionResponse,
+} from "@/lib/caracterizacion";
+import { sincronizarRespuestasConStore } from "@/lib/sincronizacion";
+import {
+  calcularProgresoFormularios,
+  ProgresoGeneral,
+  EstadoModulo,
+} from "@/lib/progreso";
 
 /* ──────────────────────────────────────────────────────────────────────────
    ILUSTRACIONES VECTORIALES SVG EXACTAS AL MOCKUP DEL USUARIO
@@ -34,26 +44,17 @@ function InformacionBasicaIcon() {
   return (
     <div className="relative flex h-16 w-16 sm:h-[72px] sm:w-[72px] shrink-0 items-center justify-center rounded-2xl bg-[#e8f7f5] p-1.5 transition-transform group-hover:scale-105">
       <svg viewBox="0 0 80 80" className="w-full h-full" fill="none">
-        {/* Sombra suave / aura */}
         <circle cx="40" cy="40" r="34" fill="#d7f3ee" opacity="0.7" />
-
-        {/* Persona (Avatar) */}
-        {/* Cuerpo / Camiseta verde azulada */}
         <path
           d="M18 64C18 53.5 25.5 46 36 46H38C48.5 46 56 53.5 56 64"
           fill="#00785a"
         />
-        {/* Cuello */}
         <path d="M33 42H41V47H33V42Z" fill="#ffcfa8" />
-        {/* Cabeza */}
         <circle cx="37" cy="33" r="11.5" fill="#ffdcb8" />
-        {/* Cabello estilizado verde oscuro institucional */}
         <path
           d="M26 31C26 24.5 30.8 19.5 37 19.5C43.2 19.5 48 24.5 48 31C48 33 46.5 34 44.5 34C43 34 42 32.5 40 31.5C38 30.5 35 30.5 33 31.5C31 32.5 30 34 28.5 34C26.5 34 26 33 26 31Z"
           fill="#004e26"
         />
-
-        {/* Pin de Ubicación (Verde SENA con centro blanco) */}
         <g transform="translate(18, 4)">
           <path
             d="M36 17C36 10.37 30.63 5 24 5C17.37 5 12 10.37 12 17C12 25.5 24 37 24 37C24 37 36 25.5 36 17Z"
@@ -74,15 +75,11 @@ function SaludCondicionFisicaIcon() {
     <div className="relative flex h-16 w-16 sm:h-[72px] sm:w-[72px] shrink-0 items-center justify-center rounded-2xl bg-[#e8f7f5] p-1.5 transition-transform group-hover:scale-105">
       <svg viewBox="0 0 80 80" className="w-full h-full" fill="none">
         <circle cx="40" cy="40" r="34" fill="#d7f3ee" opacity="0.7" />
-
-        {/* Corazón verde */}
         <path
           d="M34 19C28.48 19 24 23.48 24 29C24 38 34 47.5 34 47.5C34 47.5 44 38 44 29C44 23.48 39.52 19 34 19Z"
           fill="#00a85a"
           transform="scale(1.18) translate(-6, -4)"
         />
-
-        {/* Línea de pulso cardíaco ECG en blanco */}
         <path
           d="M26 30H30L32.5 25L35.5 34L38.5 27L40.5 31H44"
           stroke="#ffffff"
@@ -90,8 +87,6 @@ function SaludCondicionFisicaIcon() {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-
-        {/* Curita / Tira adhesiva médica diagonal */}
         <g transform="rotate(-30 46 50)">
           <rect
             x="32"
@@ -107,8 +102,6 @@ function SaludCondicionFisicaIcon() {
           <circle cx="48" cy="53.5" r="1.3" fill="#00785a" />
           <circle cx="53" cy="53.5" r="1.3" fill="#00785a" />
         </g>
-
-        {/* Mini cruz médica inferior izquierda */}
         <circle cx="24" cy="52" r="9" fill="#00a85a" stroke="#ffffff" strokeWidth="1.5" />
         <path
           d="M20 52H28M24 48V56"
@@ -127,8 +120,6 @@ function SaludSexualReproductivaIcon() {
     <div className="relative flex h-16 w-16 sm:h-[72px] sm:w-[72px] shrink-0 items-center justify-center rounded-2xl bg-[#f2eefb] p-1.5 transition-transform group-hover:scale-105">
       <svg viewBox="0 0 80 80" className="w-full h-full" fill="none">
         <circle cx="40" cy="40" r="34" fill="#e7def7" opacity="0.7" />
-
-        {/* Símbolo masculino (arriba derecha) en verde */}
         <circle
           cx="43"
           cy="31"
@@ -144,8 +135,6 @@ function SaludSexualReproductivaIcon() {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-
-        {/* Símbolo femenino (abajo izquierda) en verde institucional */}
         <circle
           cx="29"
           cy="42"
@@ -160,8 +149,6 @@ function SaludSexualReproductivaIcon() {
           strokeWidth="3.2"
           strokeLinecap="round"
         />
-
-        {/* Paquete de protección / prevención (cuadrado teal) */}
         <g transform="translate(42, 42)">
           <rect
             x="0"
@@ -187,22 +174,16 @@ function SituacionSocioeconomicaIcon() {
     <div className="relative flex h-16 w-16 sm:h-[72px] sm:w-[72px] shrink-0 items-center justify-center rounded-2xl bg-[#e8f7f5] p-1.5 transition-transform group-hover:scale-105">
       <svg viewBox="0 0 80 80" className="w-full h-full" fill="none">
         <circle cx="40" cy="40" r="34" fill="#d7f3ee" opacity="0.7" />
-
-        {/* Silueta Persona 1 (izquierda) */}
         <circle cx="28" cy="27" r="7.5" fill="#00875a" />
         <path
           d="M17 56C17 47 22.5 41 28.5 41C34.5 41 40 47 40 56"
           fill="#00875a"
         />
-
-        {/* Silueta Persona 2 (derecha) */}
         <circle cx="43" cy="24" r="8" fill="#00a85a" />
         <path
           d="M33 56C33 46 38.5 39 45 39C51.5 39 57 46 57 56"
           fill="#00a85a"
         />
-
-        {/* Moneda / Símbolo de Dinero ($) en círculo dorado */}
         <g transform="translate(40, 40)">
           <circle
             cx="14"
@@ -235,8 +216,6 @@ function PerfilFormativoIcon() {
     <div className="relative flex h-16 w-16 sm:h-[72px] sm:w-[72px] shrink-0 items-center justify-center rounded-2xl bg-[#f2eefb] p-1.5 transition-transform group-hover:scale-105">
       <svg viewBox="0 0 80 80" className="w-full h-full" fill="none">
         <circle cx="40" cy="40" r="34" fill="#e7def7" opacity="0.7" />
-
-        {/* Birrete de graduación (Mortarboard) */}
         <g transform="translate(6, 6)">
           <polygon points="32,14 56,25 32,36 8,25" fill="#005a40" />
           <path
@@ -251,10 +230,7 @@ function PerfilFormativoIcon() {
           />
           <circle cx="52" cy="47" r="2.5" fill="#fdc300" />
         </g>
-
-        {/* Jeringa / Vacuna diagonal */}
         <g transform="rotate(-40 45 52)">
-          {/* Aguja */}
           <line
             x1="22"
             y1="52"
@@ -264,7 +240,6 @@ function PerfilFormativoIcon() {
             strokeWidth="2.2"
             strokeLinecap="round"
           />
-          {/* Cilindro */}
           <rect
             x="22"
             y="47"
@@ -275,12 +250,9 @@ function PerfilFormativoIcon() {
             stroke="#00875a"
             strokeWidth="1.8"
           />
-          {/* Líquido verde */}
           <rect x="24" y="49" width="15" height="6" rx="1" fill="#00c853" />
-          {/* Marcas de medición */}
           <line x1="30" y1="47" x2="30" y2="50" stroke="#004e26" strokeWidth="1" />
           <line x1="34" y1="47" x2="34" y2="50" stroke="#004e26" strokeWidth="1" />
-          {/* Émbolo */}
           <rect x="47" y="50" width="8" height="4" fill="#00875a" />
           <line
             x1="55"
@@ -303,8 +275,6 @@ function ReportesAsesoriaIcon() {
     <div className="relative flex h-16 w-16 sm:h-[72px] sm:w-[72px] shrink-0 items-center justify-center rounded-2xl bg-[#e8f7f5] p-1.5 transition-transform group-hover:scale-105">
       <svg viewBox="0 0 80 80" className="w-full h-full" fill="none">
         <circle cx="40" cy="40" r="34" fill="#d7f3ee" opacity="0.7" />
-
-        {/* Pantalla / Monitor con estadísticas */}
         <rect
           x="16"
           y="18"
@@ -315,23 +285,16 @@ function ReportesAsesoriaIcon() {
           stroke="#00222b"
           strokeWidth="1.5"
         />
-        {/* Cabecera del monitor */}
         <rect x="16" y="18" width="43" height="7" rx="4" fill="#00222b" />
         <circle cx="21" cy="21.5" r="1.5" fill="#ef4444" />
         <circle cx="26" cy="21.5" r="1.5" fill="#f59e0b" />
         <circle cx="31" cy="21.5" r="1.5" fill="#10b981" />
-
-        {/* Barras del gráfico */}
         <rect x="23" y="36" width="5" height="10" rx="1.5" fill="#00a85a" />
         <rect x="31" y="30" width="5" height="16" rx="1.5" fill="#38bdf8" />
         <rect x="39" y="33" width="5" height="13" rx="1.5" fill="#fdc300" />
         <rect x="47" y="28" width="5" height="18" rx="1.5" fill="#a855f7" />
-
-        {/* Soporte de la pantalla */}
         <path d="M33 50H42V55H33V50Z" fill="#00222b" />
         <rect x="28" y="55" width="19" height="3" rx="1.5" fill="#00222b" />
-
-        {/* Auricular Telefónico verde superpuesto */}
         <g transform="translate(37, 33) rotate(15)">
           <path
             d="M10 8C7 5 3 6 1 9C-1 12 0 16 3 20C6 24 10 27 15 28C19 29 23 27 24 24C25 21 23 18 19 17L17 19C16 19 14 18 12 16C10 14 10 12 11 11L10 8Z"
@@ -345,8 +308,50 @@ function ReportesAsesoriaIcon() {
   );
 }
 
+/** Componente auxiliar para renderizar el badge de estado de una tarjeta */
+function BadgeEstadoTarjeta({
+  estado,
+  respondidas,
+  total,
+}: {
+  estado: EstadoModulo;
+  respondidas?: number;
+  total?: number;
+}) {
+  if (estado === "completado") {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#00875a] text-white">
+          <Check size={13} strokeWidth={3} />
+        </div>
+        <span className="text-xs font-semibold text-slate-700">Completado</span>
+      </div>
+    );
+  }
+
+  if (estado === "en_curso") {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-bold">
+          •
+        </div>
+        <span className="text-xs font-bold text-amber-700">
+          En curso {respondidas !== undefined && total !== undefined ? `(${respondidas}/${total})` : ""}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-4 w-4 rounded-full border-2 border-slate-300" />
+      <span className="text-xs font-semibold text-slate-500">Pendiente</span>
+    </div>
+  );
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
-   COMPONENTE PRINCIPAL: DASHBOARD DE 6 FORMULARIOS (MOCKUP EXACTO)
+   COMPONENTE PRINCIPAL: DASHBOARD DE 6 FORMULARIOS
 ────────────────────────────────────────────────────────────────────────── */
 
 type ActiveForm =
@@ -364,6 +369,9 @@ function AprendizFormulariosContent() {
   const [showRecaracterizacionInfo, setShowRecaracterizacionInfo] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
+  const [usuario, setUsuario] = useState<any>(null);
+  const [caracterizacionData, setCaracterizacionData] = useState<MiCaracterizacionResponse | null>(null);
+  const [progreso, setProgreso] = useState<ProgresoGeneral>(() => calcularProgresoFormularios());
   const [radicadoGenerado, setRadicadoGenerado] = useState<{
     radicado: string;
     fechaRadicado: string;
@@ -373,6 +381,30 @@ function AprendizFormulariosContent() {
     ficha: string;
     centro: string;
   } | null>(null);
+
+  // Sincronizar datos y calcular progreso real
+  const refrescarDatosYProgreso = async () => {
+    const u = getUser();
+    setUsuario(u);
+
+    try {
+      const resBackend = await obtenerMiCaracterizacion();
+      if (resBackend && resBackend.aprendiz) {
+        setCaracterizacionData(resBackend);
+        await sincronizarRespuestasConStore(resBackend);
+        setProgreso(calcularProgresoFormularios(resBackend));
+      } else {
+        setProgreso(calcularProgresoFormularios());
+      }
+    } catch (err) {
+      console.warn("No se pudo cargar caracterización del backend:", err);
+      setProgreso(calcularProgresoFormularios());
+    }
+  };
+
+  useEffect(() => {
+    refrescarDatosYProgreso();
+  }, [selectedForm]);
 
   const handleFinalizarCaracterizacion = async () => {
     setIsSubmitting(true);
@@ -412,6 +444,7 @@ function AprendizFormulariosContent() {
         centro: user?.centro || "Centro de Teleinformática y Producción Industrial - Regional Cauca",
       });
 
+      await refrescarDatosYProgreso();
       setSelectedForm("reportes");
     } catch (err: any) {
       console.error("Error al finalizar caracterización:", err);
@@ -465,7 +498,10 @@ function AprendizFormulariosContent() {
                 numeroPaso="1 de 4"
                 linkVolver=""
                 textoBotonSiguiente="Guardar y Continuar a Salud"
-                onSuccess={() => setSelectedForm("salud_fisica")}
+                onSuccess={() => {
+                  refrescarDatosYProgreso();
+                  setSelectedForm("salud_fisica");
+                }}
               />
             )}
             {selectedForm === "salud_fisica" && (
@@ -476,7 +512,10 @@ function AprendizFormulariosContent() {
                 numeroPaso="2 de 4"
                 linkVolver=""
                 textoBotonSiguiente="Guardar y Continuar a Socioeconómica"
-                onSuccess={() => setSelectedForm("socioeconomica")}
+                onSuccess={() => {
+                  refrescarDatosYProgreso();
+                  setSelectedForm("socioeconomica");
+                }}
               />
             )}
             {selectedForm === "salud_sexual" && (
@@ -487,7 +526,10 @@ function AprendizFormulariosContent() {
                 numeroPaso="2 de 4"
                 linkVolver=""
                 textoBotonSiguiente="Guardar y Continuar"
-                onSuccess={() => setSelectedForm(null)}
+                onSuccess={() => {
+                  refrescarDatosYProgreso();
+                  setSelectedForm(null);
+                }}
               />
             )}
             {selectedForm === "socioeconomica" && (
@@ -498,7 +540,10 @@ function AprendizFormulariosContent() {
                 numeroPaso="3 de 4"
                 linkVolver=""
                 textoBotonSiguiente="Guardar y Continuar a Perfil Formativo"
-                onSuccess={() => setSelectedForm("formativo")}
+                onSuccess={() => {
+                  refrescarDatosYProgreso();
+                  setSelectedForm("formativo");
+                }}
               />
             )}
             {selectedForm === "formativo" && (
@@ -508,19 +553,23 @@ function AprendizFormulariosContent() {
                 subtituloModulo="Actualiza tu trayectoria académica, motivaciones y esquema de vacunación biológica."
                 numeroPaso="4 de 4"
                 linkVolver=""
-                textoBotonSiguiente={isSubmitting ? "Guardando en servidores del SENA..." : "Guardar y Finalizar Caracterización"}
+                textoBotonSiguiente={
+                  isSubmitting
+                    ? "Guardando en servidores del SENA..."
+                    : "Guardar y Finalizar Caracterización"
+                }
                 onSuccess={() => handleFinalizarCaracterizacion()}
               />
             )}
             {selectedForm === "reportes" && (
               <Formulario10Finalizado
-                radicado={radicadoGenerado?.radicado}
-                fechaRadicado={radicadoGenerado?.fechaRadicado}
-                nombreAprendiz={radicadoGenerado?.nombreAprendiz}
-                documento={radicadoGenerado?.documento}
-                programa={radicadoGenerado?.programa}
-                ficha={radicadoGenerado?.ficha}
-                centro={radicadoGenerado?.centro}
+                radicado={radicadoGenerado?.radicado || progreso.radicado || undefined}
+                fechaRadicado={radicadoGenerado?.fechaRadicado || progreso.fechaRadicado || undefined}
+                nombreAprendiz={radicadoGenerado?.nombreAprendiz || usuario?.nombre}
+                documento={radicadoGenerado?.documento || usuario?.numeroDocumento}
+                programa={radicadoGenerado?.programa || usuario?.programa}
+                ficha={radicadoGenerado?.ficha || usuario?.ficha}
+                centro={radicadoGenerado?.centro || usuario?.centro}
               />
             )}
           </main>
@@ -543,6 +592,11 @@ function AprendizFormulariosContent() {
   // ════════════════════════════════════════════════════════════════════════
   // VISTA PRINCIPAL: 6 TARJETAS EXACTAS AL MOCKUP DEL USUARIO
   // ════════════════════════════════════════════════════════════════════════
+  const nombreAprendiz = usuario?.nombre || "Valentina Gómez Mejía";
+  const programaAprendiz =
+    usuario?.programa || "Tecnólogo en Análisis y Desarrollo de Software";
+  const fichaAprendiz = usuario?.ficha || "2670142";
+
   return (
     <div className="flex-1 w-full bg-[#edf5f7] p-4 sm:p-6 md:p-8 font-primary selection:bg-emerald-100 selection:text-emerald-900">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -580,14 +634,14 @@ function AprendizFormulariosContent() {
         {/* ── BIENVENIDA Y SUBTÍTULO DE FORMACIÓN ── */}
         <section className="space-y-1">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#00304d] tracking-tight">
-            Bienvenido(a), Valentina
+            Bienvenido(a), {nombreAprendiz}
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 font-medium">
-            Programa de Formación: Tecnólogo en Programación de Software (Ficha 234567)
+            Programa de Formación: {programaAprendiz} (Ficha {fichaAprendiz})
           </p>
         </section>
 
-        {/* ── BARRA DE ALERTA RECARACTERIZACIÓN Y PROGRESO (65%) ── */}
+        {/* ── BARRA DE ALERTA RECARACTERIZACIÓN Y PROGRESO DINÁMICO ── */}
         <section className="space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
             {/* Alerta de Recaracterización */}
@@ -605,9 +659,9 @@ function AprendizFormulariosContent() {
               </button>
             </div>
 
-            {/* Porcentaje de avance */}
+            {/* Porcentaje de avance dinámico */}
             <span className="font-extrabold text-[#00304d]">
-              65% Completado
+              {progreso.porcentajeGlobal}% Completado
             </span>
           </div>
 
@@ -621,11 +675,11 @@ function AprendizFormulariosContent() {
             </div>
           )}
 
-          {/* Barra de Progreso horizontal redondeada */}
+          {/* Barra de Progreso horizontal dinámica */}
           <div className="h-3 sm:h-3.5 w-full rounded-full bg-slate-200/90 overflow-hidden p-0.5">
             <div
               className="h-full rounded-full bg-gradient-to-r from-[#008f5d] to-[#00b87c] transition-all duration-700 shadow-xs"
-              style={{ width: "65%" }}
+              style={{ width: `${Math.max(5, progreso.porcentajeGlobal)}%` }}
             />
           </div>
         </section>
@@ -660,14 +714,13 @@ function AprendizFormulariosContent() {
               </div>
             </div>
 
-            {/* Pie de Tarjeta: Completado + Chevron derecho */}
+            {/* Pie de Tarjeta: Estado Dinámico + Chevron derecho */}
             <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-50">
-              <div className="flex items-center gap-2">
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#00875a] text-white">
-                  <Check size={13} strokeWidth={3} />
-                </div>
-                <span className="text-xs font-semibold text-slate-700">Completado</span>
-              </div>
+              <BadgeEstadoTarjeta
+                estado={progreso.modulos.basica?.estado || "pendiente"}
+                respondidas={progreso.modulos.basica?.respondidasObligatorias}
+                total={progreso.modulos.basica?.totalObligatorias}
+              />
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#edf7fc] text-[#0284c7] group-hover:bg-[#dff0fa] group-hover:scale-105 transition-all">
                 <ChevronRight size={17} strokeWidth={2.8} />
               </div>
@@ -702,14 +755,13 @@ function AprendizFormulariosContent() {
               </div>
             </div>
 
-            {/* Pie de Tarjeta: Completado + Chevron derecho */}
+            {/* Pie de Tarjeta: Estado Dinámico + Chevron derecho */}
             <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-50">
-              <div className="flex items-center gap-2">
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#00875a] text-white">
-                  <Check size={13} strokeWidth={3} />
-                </div>
-                <span className="text-xs font-semibold text-slate-700">Completado</span>
-              </div>
+              <BadgeEstadoTarjeta
+                estado={progreso.modulos.salud_fisica?.estado || "pendiente"}
+                respondidas={progreso.modulos.salud_fisica?.respondidasObligatorias}
+                total={progreso.modulos.salud_fisica?.totalObligatorias}
+              />
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#edf7fc] text-[#0284c7] group-hover:bg-[#dff0fa] group-hover:scale-105 transition-all">
                 <ChevronRight size={17} strokeWidth={2.8} />
               </div>
@@ -757,13 +809,14 @@ function AprendizFormulariosContent() {
               </div>
             </div>
 
-            {/* Estado Pendiente, Candado de Seguridad y Alerta de Confidencialidad */}
+            {/* Estado Dinámico, Candado de Seguridad y Alerta de Confidencialidad */}
             <div className="pt-3 mt-2 border-t border-slate-50 space-y-1.5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 rounded-full border-2 border-slate-400" />
-                  <span className="text-xs font-bold text-slate-600">Pendiente</span>
-                </div>
+                <BadgeEstadoTarjeta
+                  estado={progreso.modulos.salud_sexual?.estado || "pendiente"}
+                  respondidas={progreso.modulos.salud_sexual?.respondidasObligatorias}
+                  total={progreso.modulos.salud_sexual?.totalObligatorias}
+                />
                 <Lock size={15} className="text-slate-400" />
               </div>
               <p className="text-[10.5px] text-slate-500 font-medium flex items-center gap-1.5">
@@ -801,14 +854,13 @@ function AprendizFormulariosContent() {
               </div>
             </div>
 
-            {/* Pie de Tarjeta: Completado + Chevron derecho */}
+            {/* Pie de Tarjeta: Estado Dinámico + Chevron derecho */}
             <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-50">
-              <div className="flex items-center gap-2">
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#00875a] text-white">
-                  <Check size={13} strokeWidth={3} />
-                </div>
-                <span className="text-xs font-semibold text-slate-700">Completado</span>
-              </div>
+              <BadgeEstadoTarjeta
+                estado={progreso.modulos.socioeconomica?.estado || "pendiente"}
+                respondidas={progreso.modulos.socioeconomica?.respondidasObligatorias}
+                total={progreso.modulos.socioeconomica?.totalObligatorias}
+              />
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#edf7fc] text-[#0284c7] group-hover:bg-[#dff0fa] group-hover:scale-105 transition-all">
                 <ChevronRight size={17} strokeWidth={2.8} />
               </div>
@@ -843,14 +895,13 @@ function AprendizFormulariosContent() {
               </div>
             </div>
 
-            {/* Pie de Tarjeta: Completado + Chevron derecho */}
+            {/* Pie de Tarjeta: Estado Dinámico + Chevron derecho */}
             <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-50">
-              <div className="flex items-center gap-2">
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#00875a] text-white">
-                  <Check size={13} strokeWidth={3} />
-                </div>
-                <span className="text-xs font-semibold text-slate-700">Completado</span>
-              </div>
+              <BadgeEstadoTarjeta
+                estado={progreso.modulos.formativo?.estado || "pendiente"}
+                respondidas={progreso.modulos.formativo?.respondidasObligatorias}
+                total={progreso.modulos.formativo?.totalObligatorias}
+              />
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#edf7fc] text-[#0284c7] group-hover:bg-[#dff0fa] group-hover:scale-105 transition-all">
                 <ChevronRight size={17} strokeWidth={2.8} />
               </div>
@@ -903,8 +954,16 @@ function AprendizFormulariosContent() {
             {/* Estado Disponible + Botón Generar Reporte Personal */}
             <div className="pt-3 mt-2 border-t border-slate-50 space-y-2.5">
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#00875a]" />
-                <span className="text-xs font-semibold text-slate-700">Disponible</span>
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${
+                    progreso.caracterizacionVigente ? "bg-[#00875a]" : "bg-amber-500"
+                  }`}
+                />
+                <span className="text-xs font-semibold text-slate-700">
+                  {progreso.caracterizacionVigente
+                    ? "Disponible y Radicada"
+                    : "Pendiente de radicación"}
+                </span>
               </div>
 
               {/* Botón Verde: Generar Reporte Personal > */}

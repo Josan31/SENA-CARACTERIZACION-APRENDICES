@@ -17,6 +17,8 @@ import {
   saveRespuestasModulo,
 } from "@/lib/formulariosStore";
 import { getUser } from "@/lib/auth";
+import { obtenerMiCaracterizacion } from "@/lib/caracterizacion";
+import { sincronizarRespuestasConStore } from "@/lib/sincronizacion";
 
 interface DynamicFormRendererProps {
   moduloId: string;
@@ -47,15 +49,15 @@ export default function DynamicFormRenderer({
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Cargar preguntas y respuestas
-  const cargarDatos = () => {
+  // Cargar preguntas y respuestas con sincronización bidireccional
+  const cargarDatos = async () => {
     const list = getPreguntasModulo(moduloId);
     setPreguntas(list.filter((p) => p.activo !== false));
     const guardadas = getRespuestasModulo(moduloId);
 
-    if (moduloId === "basica") {
-      const user = getUser();
-      if (user) {
+    const user = getUser();
+    if (user) {
+      if (moduloId === "basica") {
         if (!guardadas.nombre && user.nombre) guardadas.nombre = user.nombre;
         if (!guardadas.numDoc && user.numeroDocumento) guardadas.numDoc = user.numeroDocumento;
         if (!guardadas.tipoDoc && user.tipoDocumento) {
@@ -66,7 +68,20 @@ export default function DynamicFormRenderer({
         }
         if (!guardadas.correoPersonal && user.correo) guardadas.correoPersonal = user.correo;
       }
+
+      try {
+        const resBackend = await obtenerMiCaracterizacion();
+        if (resBackend && resBackend.aprendiz) {
+          await sincronizarRespuestasConStore(resBackend);
+          const actualizadas = getRespuestasModulo(moduloId);
+          setRespuestas(actualizadas);
+          return;
+        }
+      } catch (err) {
+        console.warn("No se pudo sincronizar con backend, usando store local:", err);
+      }
     }
+
     setRespuestas(guardadas);
   };
 
@@ -87,6 +102,32 @@ export default function DynamicFormRenderer({
   }, [moduloId]);
 
   const handleChange = (id: string, val: any) => {
+    // Si cambia fechaNac, auto-calcular edad si es posible
+    if (id === "fechaNac" && val) {
+      try {
+        const nac = new Date(val);
+        if (!isNaN(nac.getTime())) {
+          const diffMs = Date.now() - nac.getTime();
+          const ageDt = new Date(diffMs);
+          const edadCalc = Math.abs(ageDt.getUTCFullYear() - 1970);
+          setRespuestas((prev) => ({
+            ...prev,
+            [id]: val,
+            edad: edadCalc,
+          }));
+          if (errores[id] || errores["edad"]) {
+            setErrores((prev) => {
+              const c = { ...prev };
+              delete c[id];
+              delete c["edad"];
+              return c;
+            });
+          }
+          return;
+        }
+      } catch {}
+    }
+
     setRespuestas((prev) => ({
       ...prev,
       [id]: val,
