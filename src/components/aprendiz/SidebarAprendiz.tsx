@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowRight, BarChart2, FileText, Home, LogOut, Settings } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart2,
+  FileText,
+  Home,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,9 +16,7 @@ import { useCurrentUser, getInitials } from "@/hooks/useCurrentUser";
 const NAV_SECTIONS = [
   {
     heading: "Menú principal",
-    items: [
-      { href: "/aprendiz", label: "Inicio", icon: Home },
-    ],
+    items: [{ href: "/aprendiz", label: "Inicio", icon: Home }],
   },
   {
     heading: "Caracterización",
@@ -22,9 +27,7 @@ const NAV_SECTIONS = [
   },
   {
     heading: "Gestión",
-    items: [
-      { href: "/admin", label: "Administración", icon: Settings },
-    ],
+    items: [{ href: "/admin", label: "Administración", icon: Settings }],
   },
 ] as const;
 
@@ -32,9 +35,9 @@ export default function SidebarAprendiz() {
   const pathname = usePathname();
   const user = useCurrentUser();
 
-  const displayName  = user?.nombre ?? "Aprendiz SENA";
+  const displayName = user?.nombre ?? "Aprendiz SENA";
   const displayEmail = user?.correo ?? "";
-  const initials     = getInitials(displayName);
+  const initials = getInitials(displayName);
 
   function isActive(href: string) {
     if (href === "/aprendiz") return pathname === "/aprendiz";
@@ -43,14 +46,17 @@ export default function SidebarAprendiz() {
 
   function handleLogout() {
     if (typeof window !== "undefined") {
-      try { localStorage.removeItem("sena_user"); } catch { /* ignore */ }
+      try {
+        localStorage.removeItem("sena_user");
+      } catch {
+        /* ignore */
+      }
       window.location.href = "/login";
     }
   }
 
   return (
     <aside className="relative flex h-full w-60 shrink-0 flex-col justify-between overflow-hidden bg-gradient-to-br from-sena-green to-emerald-600 text-white font-primary shadow-2xl select-none">
-
       {/* ── Brand Header — height locked to match the top navbar ── */}
       <div>
         <div className="flex h-[73px] items-center gap-3 border-b border-white/20 px-5">
@@ -64,6 +70,7 @@ export default function SidebarAprendiz() {
               priority
             />
           </div>
+
           <div className="flex flex-col leading-tight">
             <span className="text-[10px] font-medium text-white/70 uppercase tracking-widest">
               Más
