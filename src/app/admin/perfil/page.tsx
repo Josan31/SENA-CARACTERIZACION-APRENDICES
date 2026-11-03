@@ -135,20 +135,6 @@ export default function PerfilAdministradorPage() {
   return (
     <main className="min-h-screen bg-[#eaf7f6] p-3 text-slate-700 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1440px] overflow-hidden rounded-2xl border border-white/80 bg-white/75 shadow-[0_12px_45px_rgba(20,100,100,0.08)]">
-        {/* Top bar */}
-        <div className="flex items-center justify-between border-b border-[#e3f1ef] px-4 py-3 sm:px-7">
-          <Link
-            href="/admin"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#087d4b] shadow-sm ring-1 ring-[#d9efea] hover:bg-[#e8f6ef] transition-colors"
-            aria-label="Volver al panel principal"
-          >
-            <ArrowLeft size={18} />
-          </Link>
-          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#5d9c8c]">
-            Portal administrativo
-          </span>
-        </div>
-
         <div className="p-4 sm:p-7 lg:p-8">
           {/* ── Hero row ── */}
           <section className="grid gap-5 border-b border-[#e4f1ef] pb-6 md:grid-cols-[minmax(0,1fr)_300px] md:items-center">
@@ -239,7 +225,9 @@ export default function PerfilAdministradorPage() {
                         <ShieldCheck size={14} />
                         Identificación visual
                       </span>
-                      Tus iniciales se generan automáticamente a partir de tu nombre registrado y se usan para identificar tu perfil dentro de la plataforma.
+                      Tus iniciales se generan automáticamente a partir de tu
+                      nombre registrado y se usan para identificar tu perfil
+                      dentro de la plataforma.
                     </div>
                   </div>
                 </div>

@@ -1,16 +1,16 @@
 import DateBadge from "@/components/admin/DateBadge";
 import {
-    ArrowRight,
-    BarChart2,
-    ClipboardCheck,
-    ClipboardList,
-    ClipboardX,
-    User,
-    UserRound,
-    Users,
-    Zap
+  ArrowRight,
+  BarChart2,
+  ClipboardCheck,
+  ClipboardList,
+  ClipboardX,
+  Megaphone,
+  User,
+  UserRound,
+  Users,
+  Zap,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 /* ─────────────────────────────────────────────────────────
@@ -217,7 +217,6 @@ export function QuickActionsSection() {
 export default function AdminHomePage() {
   return (
     <>
-
       <div className="flex-1 space-y-8 p-8">
         {/* ── Page Header / Welcome Text ── */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -254,7 +253,10 @@ export default function AdminHomePage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sena-green opacity-40"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sena-green"></span>
               </span>
-              Estado de sesión: <span className="text-sena-green font-bold">Administrador Activo</span>
+              Estado de sesión:{" "}
+              <span className="text-sena-green font-bold">
+                Administrador Activo
+              </span>
             </div>
           </div>
         </div>
@@ -262,56 +264,40 @@ export default function AdminHomePage() {
         {/* ── Welcome banner ── */}
         <section
           aria-labelledby="welcome-heading"
-          className="relative flex items-center justify-between overflow-hidden rounded-2xl bg-gradient-to-r from-[#e8f8f0] via-[#d7f2e5] to-[#c8eedd] p-6 shadow-xs md:p-8"
+          className="relative flex flex-col sm:flex-row items-center gap-6 overflow-hidden rounded-3xl bg-gradient-to-r from-[#0f3460] via-[#1a5276] to-[#1f618d] p-6 shadow-lg md:p-8"
         >
-          {/* EFECTOS DE FONDO / REFLEJOS */}
-          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-            <div className="absolute -top-12 left-1/4 h-64 w-20 rotate-45 bg-gradient-to-b from-white/60 via-white/20 to-transparent blur-sm" />
-            <div className="absolute -top-16 left-1/3 h-72 w-8 rotate-45 bg-white/40 blur-xs" />
-            <div className="absolute -top-8 left-2/3 h-56 w-12 rotate-45 bg-white/25 blur-sm" />
-            <div className="absolute -left-10 -top-10 h-48 w-48 rounded-full bg-white/50 blur-2xl" />
-            <div className="absolute -bottom-10 left-1/2 h-36 w-60 rounded-full bg-emerald-200/30 blur-xl" />
+          {/* Soft glow orbs */}
+          <div className="absolute -top-8 -left-8 h-40 w-40 rounded-full bg-white/5 blur-2xl pointer-events-none" aria-hidden="true" />
+          <div className="absolute -bottom-8 right-16 h-36 w-56 rounded-full bg-blue-300/10 blur-2xl pointer-events-none" aria-hidden="true" />
+
+          {/* Megaphone icon */}
+          <div className="relative shrink-0 flex h-16 w-16 items-center justify-center rounded-full bg-white/15 text-white ring-4 ring-white/10 shadow-lg backdrop-blur-sm">
+            <Megaphone size={28} strokeWidth={1.75} />
           </div>
 
-          {/* Bloque Izquierdo: Megáfono + Texto */}
-          <div className="relative z-10 flex items-start gap-3 sm:gap-4 max-w-full md:max-w-[62%] lg:max-w-[68%]">
-            <div className="relative shrink-0 hidden sm:flex items-center justify-center w-14 h-14 md:w-16 md:h-16 overflow-visible">
-              <Image
-                src="/admin-images/left-megaphone.png"
-                alt="Megáfono"
-                width={64}
-                height={64}
-                priority
-                className="object-contain scale-150"
-              />
-            </div>
-
-            <div>
-              <h2
-                id="welcome-heading"
-                className="text-lg md:text-xl font-extrabold text-sena-navy tracking-tight leading-snug"
-              >
-                PANEL DE GESTIÓN DE BIENESTAR AL APRENDIZ
-              </h2>
-              <p className="mt-1.5 text-xs md:text-sm font-medium text-sena-navy/75 leading-relaxed">
-                Espacio de supervisión y gestión institucional. Desde este panel
-                puedes monitorear el estado de diligenciamiento de los aprendices,
-                supervisar las respuestas a los módulos de caracterización y
-                configurar la oferta de apoyos de sostenimiento en el SENA.
-              </p>
-            </div>
+          {/* Text */}
+          <div className="relative flex-1 min-w-0">
+            <h2
+              id="welcome-heading"
+              className="text-base md:text-lg font-extrabold text-white tracking-tight leading-snug"
+            >
+              PANEL DE GESTIÓN DE BIENESTAR AL APRENDIZ
+            </h2>
+            <p className="mt-1.5 text-xs md:text-sm font-medium text-white/70 leading-relaxed max-w-2xl">
+              Espacio de supervisión y gestión institucional. Monitorea el estado
+              de diligenciamiento de los aprendices, supervisa las respuestas a
+              los módulos de caracterización y configura la oferta de apoyos de
+              sostenimiento en el SENA.
+            </p>
           </div>
 
-          {/* Bloque Derecho: Ilustración recortada al borde */}
-          <div className="absolute right-0 bottom-0 top-0 hidden md:block w-[38%] max-w-[420px] pointer-events-none overflow-hidden">
-            <Image
-              src="/admin-images/banner-girl-illustration.png"
-              alt="Ilustración bienvenida CARACTERIZA"
-              fill
-              priority
-              className="object-contain object-right-bottom scale-125 translate-y-3 origin-bottom-right"
-              sizes="(max-width: 1024px) 350px, 420px"
-            />
+          {/* Pill badge */}
+          <div className="relative shrink-0 hidden lg:flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-2 text-xs font-bold text-white shadow-xs">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
+            </span>
+            Panel activo
           </div>
         </section>
 

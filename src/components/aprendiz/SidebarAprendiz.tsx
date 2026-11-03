@@ -1,28 +1,40 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
+import { ArrowRight, BarChart2, FileText, Home, LogOut, Settings } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Home,
-  FileText,
-  BarChart2,
-  Settings,
-  User,
-  ChevronRight,
-  LogOut,
-} from "lucide-react";
+import { useCurrentUser, getInitials } from "@/hooks/useCurrentUser";
 
-const NAV_ITEMS = [
-  { href: "/aprendiz", label: "Inicio", icon: Home },
-  { href: "/aprendiz/formularios", label: "Formulario", icon: FileText },
-  { href: "/aprendiz/resultados", label: "Resultados", icon: BarChart2 },
-  { href: "/admin", label: "Administración", icon: Settings },
+const NAV_SECTIONS = [
+  {
+    heading: "Menú principal",
+    items: [
+      { href: "/aprendiz", label: "Inicio", icon: Home },
+    ],
+  },
+  {
+    heading: "Caracterización",
+    items: [
+      { href: "/aprendiz/formularios", label: "Formulario", icon: FileText },
+      { href: "/aprendiz/resultados", label: "Resultados", icon: BarChart2 },
+    ],
+  },
+  {
+    heading: "Gestión",
+    items: [
+      { href: "/admin", label: "Administración", icon: Settings },
+    ],
+  },
 ] as const;
 
 export default function SidebarAprendiz() {
   const pathname = usePathname();
+  const user = useCurrentUser();
+
+  const displayName  = user?.nombre ?? "Aprendiz SENA";
+  const displayEmail = user?.correo ?? "";
+  const initials     = getInitials(displayName);
 
   function isActive(href: string) {
     if (href === "/aprendiz") return pathname === "/aprendiz";
@@ -31,20 +43,17 @@ export default function SidebarAprendiz() {
 
   function handleLogout() {
     if (typeof window !== "undefined") {
-      try {
-        localStorage.removeItem("sena_user");
-      } catch {
-        // ignore
-      }
+      try { localStorage.removeItem("sena_user"); } catch { /* ignore */ }
       window.location.href = "/login";
     }
   }
 
   return (
-    <aside className="relative flex h-full w-60 shrink-0 flex-col justify-between overflow-hidden bg-[#004e26] text-white font-primary shadow-2xl select-none">
-      {/* ── Brand Header Institucional SENA ── */}
+    <aside className="relative flex h-full w-60 shrink-0 flex-col justify-between overflow-hidden bg-gradient-to-br from-sena-green to-emerald-600 text-white font-primary shadow-2xl select-none">
+
+      {/* ── Brand Header — height locked to match the top navbar ── */}
       <div>
-        <div className="flex items-center gap-3 px-6 pt-6 pb-4">
+        <div className="flex h-[73px] items-center gap-3 border-b border-white/20 px-5">
           <div className="relative flex h-11 w-11 shrink-0 items-center justify-center">
             <Image
               src="/sena-logo-blanco.png"
@@ -56,84 +65,124 @@ export default function SidebarAprendiz() {
             />
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-[11px] font-medium text-white/90">Más</span>
-            <span className="text-xs font-black tracking-wide text-white uppercase">
-              personas
+            <span className="text-[10px] font-medium text-white/70 uppercase tracking-widest">
+              Más
             </span>
-            <span className="text-[10px] font-medium text-[#fdc300] mt-0.5">Más</span>
-            <span className="text-[11px] font-black tracking-wide text-[#fdc300] uppercase">
-              oportunidades
+            <span className="text-xs font-black tracking-wide text-white uppercase">
+              Personas
+            </span>
+            <span className="text-[10px] font-medium text-sena-yellow uppercase tracking-widest mt-0.5">
+              Más
+            </span>
+            <span className="text-[11px] font-black tracking-wide text-sena-yellow uppercase">
+              Oportunidades
             </span>
           </div>
         </div>
 
-        {/* ── Menú de Navegación ── */}
-        <nav className="px-4 py-4 space-y-2" aria-label="Menú del Aprendiz">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
+        {/* ── Navigation ── */}
+        <nav
+          className="px-3.5 pt-3 pb-1 space-y-4"
+          aria-label="Menú del Aprendiz"
+        >
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.heading}>
+              {/* Section label */}
+              <p className="mb-1.5 px-3.5 text-[9px] font-extrabold uppercase tracking-[0.18em] text-white/45 select-none">
+                {section.heading}
+              </p>
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs transition-all ${
-                  active
-                    ? "bg-[#c8eada] text-[#004e28] font-black shadow-sm"
-                    : "text-white/90 hover:bg-white/10 font-bold"
-                }`}
-              >
-                <Icon size={18} strokeWidth={active ? 2.6 : 2} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+              <div className="space-y-1">
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href);
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`
+                        group relative flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm transition-all duration-200
+                        ${
+                          active
+                            ? "bg-white text-emerald-700 font-bold shadow-md"
+                            : "text-white/90 font-medium hover:bg-white/10 hover:text-white"
+                        }
+                      `}
+                    >
+                      <Icon
+                        size={18}
+                        strokeWidth={active ? 2.5 : 2}
+                        className={
+                          active
+                            ? "text-emerald-600"
+                            : "text-white/80 group-hover:text-white transition-colors"
+                        }
+                      />
+                      <span className="tracking-wide">{item.label}</span>
+
+                      {active && (
+                        <div className="absolute right-3.5 flex items-center justify-center">
+                          <span className="absolute h-3 w-3 rounded-full bg-emerald-500/30 animate-ping" />
+                          <span className="relative h-2 w-2 rounded-full bg-emerald-600" />
+                        </div>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
       </div>
 
-      {/* ── Sección Inferior con Ribbons y Perfil ── */}
-      <div className="relative pt-12 pb-6 px-4">
-        {/* Cintas/Ribbons institucionales diagonales en esquina inferior izquierda */}
+      {/* ── Bottom Section ── */}
+      <div className="relative pt-12 pb-5 px-3.5">
+        {/* Diagonal institutional ribbons */}
         <div
-          className="absolute left-0 bottom-0 w-36 h-36 pointer-events-none overflow-hidden opacity-90 z-0"
+          className="absolute inset-x-0 bottom-20 h-16 pointer-events-none overflow-hidden opacity-95 z-0"
           aria-hidden="true"
         >
-          {/* Cinta Amarilla */}
-          <div
-            className="absolute -bottom-8 -left-8 w-32 h-16 bg-[#fdc300] -rotate-45 transform origin-bottom-left"
-          />
-          {/* Cinta Azul Marina */}
-          <div
-            className="absolute -bottom-10 left-6 w-36 h-12 bg-[#00304d] -rotate-45 transform origin-bottom-left"
-          />
+          <div className="absolute -left-6 -bottom-6 w-[120%] h-6 bg-sena-yellow rotate-[28deg] origin-bottom-left shadow-sm" />
+          <div className="absolute -left-6 -bottom-10 w-[120%] h-6 bg-sena-navy rotate-[28deg] origin-bottom-left shadow-sm" />
         </div>
 
-        {/* Botón de Perfil en Cápsula */}
         <div className="relative z-10 space-y-2">
+          {/* Profile pill */}
           <Link
             href="/aprendiz/perfil"
-            className="flex items-center justify-between rounded-full bg-[#00381a]/90 hover:bg-[#00381a] border border-white/10 px-3.5 py-2.5 transition-all group shadow-sm cursor-pointer"
+            className="flex items-center justify-between rounded-2xl bg-white hover:bg-gray-50 border border-white px-3.5 py-3 transition-all group shadow-md"
+            aria-label="Ver perfil"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#004e26]">
-                <User size={15} strokeWidth={2.4} />
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                aria-hidden="true"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sena-green to-emerald-600 text-white text-xs font-black shadow-sm"
+              >
+                {initials}
               </div>
-              <span className="text-xs font-bold text-white tracking-wide">
-                Perfil
-              </span>
+              <div className="min-w-0 leading-tight">
+                <p className="text-xs font-bold text-emerald-700 truncate max-w-[110px]">
+                  {displayName}
+                </p>
+                <p className="text-[10px] font-medium text-emerald-600/70 truncate max-w-[110px]">
+                  {displayEmail || "Ver perfil"}
+                </p>
+              </div>
             </div>
-            <ChevronRight
-              size={15}
-              className="text-white/60 group-hover:text-white group-hover:translate-x-0.5 transition-all"
+            <ArrowRight
+              size={14}
+              className="text-emerald-600/50 group-hover:text-emerald-700 group-hover:translate-x-0.5 transition-all shrink-0 ml-1"
             />
           </Link>
 
-          {/* Botón sutil de Cerrar Sesión */}
+          {/* Logout */}
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full text-center text-[10px] font-bold text-emerald-200/60 hover:text-white transition-colors cursor-pointer py-1"
+            className="flex w-full items-center justify-center gap-1.5 py-1 text-[10px] font-bold text-emerald-200/60 hover:text-white transition-colors cursor-pointer"
           >
+            <LogOut size={11} strokeWidth={2.5} />
             Cerrar Sesión
           </button>
         </div>

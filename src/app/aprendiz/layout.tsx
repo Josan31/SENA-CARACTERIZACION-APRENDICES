@@ -1,4 +1,5 @@
 import SidebarAprendiz from "@/components/aprendiz/SidebarAprendiz";
+import TopNavAprendiz from "@/components/aprendiz/TopNavAprendiz";
 
 export default function AprendizLayout({
   children,
@@ -11,7 +12,9 @@ export default function AprendizLayout({
       <SidebarAprendiz />
 
       {/* Área principal desplazable de contenido */}
-      <main className="flex flex-1 flex-col overflow-y-auto">
+      <main className="flex flex-1 flex-col overflow-y-auto min-w-0">
+        {/* Top navbar compartida en todas las páginas del aprendiz */}
+        <TopNavAprendiz />
         {children}
       </main>
     </div>

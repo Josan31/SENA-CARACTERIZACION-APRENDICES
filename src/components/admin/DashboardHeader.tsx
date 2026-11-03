@@ -45,6 +45,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { useCurrentUser, getInitials } from "@/hooks/useCurrentUser";
+import { useSidebar } from "./SidebarContext";
 
 /* ─────────────────────────────────────────────────────────
    Helpers
@@ -180,7 +181,7 @@ function ProfileModal({
 ───────────────────────────────────────────────────────── */
 export default function DashboardHeader() {
   const [profileOpen, setProfileOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { collapsed, toggle: toggleSidebar } = useSidebar();
 
   const user = useCurrentUser();
   const nombre  = user?.nombre  ?? "Usuario SENA";
@@ -199,14 +200,14 @@ export default function DashboardHeader() {
           <div className="flex items-center gap-3 flex-1 max-w-md">
             <button
               type="button"
-              onClick={() => setSidebarOpen((v) => !v)}
-              aria-label={sidebarOpen ? "Cerrar panel lateral" : "Abrir panel lateral"}
+              onClick={toggleSidebar}
+              aria-label={collapsed ? "Abrir panel lateral" : "Cerrar panel lateral"}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-all hover:border-sena-green hover:bg-sena-green hover:text-white active:scale-95"
             >
               <PanelLeftClose
                 size={18}
                 strokeWidth={2}
-                className={`transition-transform duration-300 ${sidebarOpen ? "" : "rotate-180"}`}
+                className={`transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`}
               />
             </button>
 
@@ -321,14 +322,6 @@ export default function DashboardHeader() {
                   >
                     <User size={16} className="text-sena-green" />
                     <span>Ver Perfil</span>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem
-                    id="menu-configuracion"
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-sena-navy cursor-pointer transition-colors"
-                  >
-                    <Settings size={16} className="text-gray-400" />
-                    <span>Configuración</span>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
 
