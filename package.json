@@ -8,6 +8,7 @@
     "db:studio": "npm --prefix backend run prisma:studio",
     "db:seed": "npm --prefix backend run prisma:seed",
     "db:migrate": "npm --prefix backend run prisma:migrate",
+    "test:caracterizaciones": "node scripts/test-caracterizaciones.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
