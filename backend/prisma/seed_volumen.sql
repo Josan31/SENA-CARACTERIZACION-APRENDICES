@@ -1,8 +1,8 @@
--- ============================================================
+
 -- SEED DE VOLUMEN PARA PRUEBAS DE TABLERO E INFORME REGIONAL (RF-006)
 -- Genera 120 aprendices ficticios con distribución realista
 -- Marca TODO con numero_documento/usuario que empiecen por '99900'
--- 
+--
 -- REGLAS:
 -- - Idempotente: si ya existen datos con numero_documento LIKE '99900%', no duplicar
 -- - Solo se usan IDs de catálogos por (categoria, valor) con subconsultas
@@ -10,7 +10,7 @@
 -- - Radicado SOLO en estado 'completa'
 -- - Cada tabla satélite con aprendiz_id y caracterizacion_id coherentes
 -- - 10 aprendices con 2 versiones (v1 completa, v2 completa o en_curso)
--- ============================================================
+
 
 BEGIN;
 
@@ -40,11 +40,11 @@ BEGIN
   END IF;
 END $$;
 
--- ============================================================
+
 -- 1. GENERAR 120 APRENDICES FICTICIOS
--- ============================================================
+
 WITH catalogos_lookup AS (
-  SELECT 
+  SELECT
     (SELECT id FROM catalogos WHERE categoria = 'tipo_documento' AND valor LIKE 'CC%' LIMIT 1) as tipo_cc,
     (SELECT id FROM catalogos WHERE categoria = 'tipo_documento' AND valor LIKE 'TI%' LIMIT 1) as tipo_ti,
     (SELECT id FROM catalogos WHERE categoria = 'sexo' AND valor = 'Hombre' LIMIT 1) as sexo_h,
@@ -64,13 +64,13 @@ WITH catalogos_lookup AS (
     (SELECT id FROM catalogos WHERE categoria = 'parentesco_acudiente' AND valor = 'Tío(a)' LIMIT 1) as par_tio
 ),
 aprendices_base AS (
-  SELECT 
+  SELECT
     '99900' || LPAD((i)::text, 6, '0') as usuario_doc,
     '99900' || LPAD((i)::text, 6, '0') as numero_doc,
     CASE WHEN random() < 0.55 THEN cl.sexo_m ELSE CASE WHEN random() < 0.9 THEN cl.sexo_h ELSE cl.sexo_i END END as sexo_id,
     random() < 0.08 as se_reconoce_lgbtiq,
-    CASE 
-      WHEN random() < 0.08 THEN 
+    CASE
+      WHEN random() < 0.08 THEN
         CASE WHEN random() < 0.4 THEN cl.ori_hom WHEN random() < 0.7 THEN cl.ori_bi WHEN random() < 0.9 THEN cl.ori_pan ELSE cl.ori_het END
       ELSE NULL
     END as orientacion_sexual_id,
@@ -96,7 +96,7 @@ aprendices_insertados AS (
     contacto_emergencia_nombre, contacto_emergencia_telefono, contacto_emergencia_parentesco_id,
     created_at, updated_at
   )
-  SELECT 
+  SELECT
     usuario_doc, nombre_completo, tipo_documento_id, numero_doc, fecha_nacimiento,
     sexo_id, se_reconoce_lgbtiq, orientacion_sexual_id, estado_civil_id,
     correo_personal, correo_institucional, telefono,
@@ -107,19 +107,15 @@ aprendices_insertados AS (
 )
 SELECT * FROM aprendices_insertados;
 
--- ============================================================
 -- 2. ACEPTACIÓN DE POLÍTICA PARA TODOS
--- ============================================================
 INSERT INTO aceptacion_politica (aprendiz_id, aceptado, fecha_aceptacion, texto_version)
 SELECT id, true, NOW() - (random() * interval '30 days'), 'v2026-01'
 FROM aprendices
 WHERE numero_documento LIKE '99900%';
 
--- ============================================================
 -- 3. GENERAR CARACTERIZACIONES
 -- Distribución: ~70% completa (con radicado), ~20% en_curso (sin radicado), ~10% sin ninguna
 -- 10 aprendices tendrán 2 versiones
--- ============================================================
 WITH aprendices_sin_caract AS (
   SELECT id, numero_documento, ROW_NUMBER() OVER (ORDER BY numero_documento) as rn
   FROM aprendices
@@ -130,19 +126,19 @@ otros_aprendices AS (
   SELECT id, rn FROM aprendices_sin_caract
 ),
 caracterizaciones_a_crear AS (
-  SELECT 
+  SELECT
     id as aprendiz_id,
     1 as version,
-    CASE 
+    CASE
       WHEN rn <= 77 THEN 'completa'      -- ~70% of 110
-      WHEN rn <= 99 THEN 'en_curso'      -- ~20% of 110  
+      WHEN rn <= 99 THEN 'en_curso'      -- ~20% of 110
       ELSE 'sin'                         -- ~10% sin ninguna
     END as estado_plan,
     rn
   FROM otros_aprendices
 )
 INSERT INTO caracterizaciones (aprendiz_id, radicado, fecha, version, estado, created_at, updated_at)
-SELECT 
+SELECT
   aprendiz_id,
   CASE WHEN estado_plan = 'completa' THEN ('RAD-SENA-' || EXTRACT(YEAR FROM CURRENT_DATE) || '-' || LPAD(nextval('radicado_seq')::text, 6, '0')) ELSE NULL END,
   CURRENT_DATE - (random() * interval '60 days'),
@@ -163,7 +159,7 @@ WITH aprendices_con_v1 AS (
   LIMIT 10
 )
 INSERT INTO caracterizaciones (aprendiz_id, radicado, fecha, version, estado, created_at, updated_at)
-SELECT 
+SELECT
   aprendiz_id,
   CASE WHEN random() < 0.7 THEN ('RAD-SENA-' || EXTRACT(YEAR FROM CURRENT_DATE) || '-' || LPAD(nextval('radicado_seq')::text, 6, '0')) ELSE NULL END,
   CURRENT_DATE - (random() * interval '30 days'),
@@ -172,12 +168,10 @@ SELECT
   NOW(), NOW()
 FROM aprendices_con_v1;
 
--- ============================================================
 -- 4. FICHAS, FORMACIÓN (1:1 por caracterización)
 -- 4 fichas: 2 técnicos y 2 tecnólogos, diurna y nocturna
--- ============================================================
 INSERT INTO fichas (numero_ficha, programa_id, jornada_id, modalidad_id, nivel_formacion_id, instructor_responsable, created_at, updated_at)
-SELECT '999FIC01', 
+SELECT '999FIC01',
        (SELECT id FROM catalogos WHERE categoria = 'programa' AND valor = 'Análisis y Desarrollo de Software'),
        (SELECT id FROM catalogos WHERE categoria = 'jornada' AND valor = 'Diurna'),
        (SELECT id FROM catalogos WHERE categoria = 'modalidad' AND valor = 'Presencial'),
@@ -186,7 +180,7 @@ SELECT '999FIC01',
 WHERE NOT EXISTS (SELECT 1 FROM fichas WHERE numero_ficha = '999FIC01');
 
 INSERT INTO fichas (numero_ficha, programa_id, jornada_id, modalidad_id, nivel_formacion_id, instructor_responsable, created_at, updated_at)
-SELECT '999FIC02', 
+SELECT '999FIC02',
        (SELECT id FROM catalogos WHERE categoria = 'programa' AND valor = 'Logística Empresarial'),
        (SELECT id FROM catalogos WHERE categoria = 'jornada' AND valor = 'Nocturna'),
        (SELECT id FROM catalogos WHERE categoria = 'modalidad' AND valor = 'Presencial'),
@@ -195,7 +189,7 @@ SELECT '999FIC02',
 WHERE NOT EXISTS (SELECT 1 FROM fichas WHERE numero_ficha = '999FIC02');
 
 INSERT INTO fichas (numero_ficha, programa_id, jornada_id, modalidad_id, nivel_formacion_id, instructor_responsable, created_at, updated_at)
-SELECT '999FIC03', 
+SELECT '999FIC03',
        (SELECT id FROM catalogos WHERE categoria = 'programa' AND valor = 'Contabilidad y Finanzas'),
        (SELECT id FROM catalogos WHERE categoria = 'jornada' AND valor = 'Diurna'),
        (SELECT id FROM catalogos WHERE categoria = 'modalidad' AND valor = 'Presencial'),
@@ -204,7 +198,7 @@ SELECT '999FIC03',
 WHERE NOT EXISTS (SELECT 1 FROM fichas WHERE numero_ficha = '999FIC03');
 
 INSERT INTO fichas (numero_ficha, programa_id, jornada_id, modalidad_id, nivel_formacion_id, instructor_responsable, created_at, updated_at)
-SELECT '999FIC04', 
+SELECT '999FIC04',
        (SELECT id FROM catalogos WHERE categoria = 'programa' AND valor = 'Técnico en Cocina'),
        (SELECT id FROM catalogos WHERE categoria = 'jornada' AND valor = 'Nocturna'),
        (SELECT id FROM catalogos WHERE categoria = 'modalidad' AND valor = 'Presencial'),
@@ -224,16 +218,14 @@ fichas_list AS (
   SELECT id, ROW_NUMBER() OVER (ORDER BY numero_ficha) as rn FROM fichas WHERE numero_ficha LIKE '999FIC%'
 )
 INSERT INTO formacion (aprendiz_id, caracterizacion_id, ficha_id)
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   (SELECT id FROM fichas_list WHERE rn = ((ca.rn % 4) + 1))
 FROM caracterizaciones_con_aprendiz ca;
 
--- ============================================================
 -- 5. LOCALIZACIÓN (1:1 por caracterización)
 -- ~70% Palmira repartido en barrios/comunas, resto otras ciudades
--- ============================================================
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id,
          random() < 0.7 as es_palmira
@@ -242,15 +234,15 @@ WITH caracterizaciones_con_aprendiz AS (
   WHERE a.numero_documento LIKE '99900%'
 )
 INSERT INTO localizacion (aprendiz_id, caracterizacion_id, direccion, ciudad_id, barrio_id, estrato_id, zona_id, tenencia_vivienda_id, medio_transporte_id)
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   'Calle Prueba ' || floor(random()*200)+1 || ' #' || floor(random()*100)+1 || '-' || floor(random()*50)+1,
-  CASE 
+  CASE
     WHEN ca.es_palmira THEN (SELECT id FROM catalogos WHERE categoria = 'ciudad' AND valor = 'Palmira')
     ELSE (SELECT id FROM catalogos WHERE categoria = 'ciudad' AND random() < 0.5 ORDER BY random() LIMIT 1)
   END,
-  CASE 
+  CASE
     WHEN ca.es_palmira THEN (SELECT id FROM catalogos WHERE categoria = 'barrio' ORDER BY random() LIMIT 1)
     ELSE NULL
   END,
@@ -258,10 +250,8 @@ SELECT
   NULL, NULL, NULL
 FROM caracterizaciones_con_aprendiz ca;
 
--- ============================================================
 -- 6. SALUD
 -- ~10% con discapacidad
--- ============================================================
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id
   FROM caracterizaciones c
@@ -269,12 +259,12 @@ WITH caracterizaciones_con_aprendiz AS (
   WHERE a.numero_documento LIKE '99900%'
 )
 INSERT INTO salud (
-  aprendiz_id, caracterizacion_id, afiliado_salud, eps_id, regimen_salud_id, 
+  aprendiz_id, caracterizacion_id, afiliado_salud, eps_id, regimen_salud_id,
   sisben_estado_id, grupo_sisben_id, trastorno_mental, psicoterapia,
   discapacidad_certificada, presenta_discapacidad, tipo_discapacidad_id,
   alergia, consume_sustancias, medicamento_permanente, requiere_medicamento
 )
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   random() < 0.95,
@@ -293,11 +283,9 @@ SELECT
   random() < 0.07
 FROM caracterizaciones_con_aprendiz ca;
 
--- ============================================================
 -- 7. SALUD SEXUAL Y REPRODUCTIVA
 -- ~6% de las mujeres en gestación (semana coherente)
 -- ~12% cabezas de hogar con 1 a 3 hijos
--- ============================================================
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id,
          (a.sexo_id = (SELECT id FROM catalogos WHERE categoria = 'sexo' AND valor = 'Mujer' LIMIT 1)) as es_mujer,
@@ -310,7 +298,7 @@ INSERT INTO salud_sexual_reproductiva (
   aprendiz_id, caracterizacion_id, en_gestacion, semana_gestacion, en_lactancia,
   cabeza_familia, num_hijos, num_personas_hogar, metodo_anticonceptivo_id, desea_asesoria
 )
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   CASE WHEN ca.es_mujer AND ca.r_gestacion < 0.06 THEN true WHEN ca.es_mujer THEN false ELSE NULL END,
@@ -323,9 +311,7 @@ SELECT
   random() < 0.15
 FROM caracterizaciones_con_aprendiz ca;
 
--- ============================================================
 -- 8. COVID-19 - Vacunación con dosis 0 a 3 coherentes
--- ============================================================
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id
   FROM caracterizaciones c
@@ -333,7 +319,7 @@ WITH caracterizaciones_con_aprendiz AS (
   WHERE a.numero_documento LIKE '99900%'
 )
 INSERT INTO covid19 (aprendiz_id, caracterizacion_id, vacunado, vacuna_id, dosis, esquema_completo)
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   random() < 0.85,
@@ -342,10 +328,8 @@ SELECT
   CASE WHEN random() < 0.70 THEN true ELSE false END
 FROM caracterizaciones_con_aprendiz ca;
 
--- ============================================================
 -- 9. SITUACIÓN ECONÓMICA
 -- Con trigger de coherencia: jefe_hogar y sostiene_hogar = true si sustento_principal es 'El propio aprendiz'
--- ============================================================
 WITH caracterizaciones_con_aprendiz AS (
   SELECT c.id as caracterizacion_id, c.aprendiz_id
   FROM caracterizaciones c
@@ -356,7 +340,7 @@ INSERT INTO situacion_economica (
   aprendiz_id, caracterizacion_id, jefe_hogar, sostiene_hogar,
   sustento_principal_id, personas_a_cargo, rango_ingresos_id, fuente_ingresos_id, grupo_etnico_id
 )
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   false, false,
@@ -373,9 +357,7 @@ SET jefe_hogar = true, sostiene_hogar = true
 WHERE sustento_principal_id = (SELECT id FROM catalogos WHERE categoria = 'sustento_principal' AND valor = 'El propio aprendiz' LIMIT 1)
   AND aprendiz_id IN (SELECT id FROM aprendices WHERE numero_documento LIKE '99900%');
 
--- ============================================================
 -- 10. TABLAS SATÉLITE MULTIVALOR CON aprendiz_id Y caracterizacion_id COHERENTES
--- ============================================================
 
 -- PARENTESCOS HOGAR
 WITH caracterizaciones_con_aprendiz AS (
@@ -385,7 +367,7 @@ WITH caracterizaciones_con_aprendiz AS (
   WHERE a.numero_documento LIKE '99900%'
 )
 INSERT INTO parentescos_hogar (aprendiz_id, caracterizacion_id, parentesco_id)
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   (SELECT id FROM catalogos WHERE categoria = 'parentesco' AND valor != 'No hay más convivientes' ORDER BY random() LIMIT 1)
@@ -400,7 +382,7 @@ WITH caracterizaciones_con_aprendiz AS (
   WHERE a.numero_documento LIKE '99900%'
 )
 INSERT INTO poblaciones_reconocidas (aprendiz_id, caracterizacion_id, poblacion_id)
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   (SELECT id FROM catalogos WHERE categoria = 'poblacion' AND valor != 'Ninguna' ORDER BY random() LIMIT 1)
@@ -415,7 +397,7 @@ WITH caracterizaciones_con_aprendiz AS (
   WHERE a.numero_documento LIKE '99900%'
 )
 INSERT INTO apoyos_estado (aprendiz_id, caracterizacion_id, tipo_apoyo_id, detalle_otra)
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   (SELECT id FROM catalogos WHERE categoria = 'apoyo_estado' AND valor != 'Ninguno' ORDER BY random() LIMIT 1),
@@ -431,7 +413,7 @@ WITH caracterizaciones_con_aprendiz AS (
   WHERE a.numero_documento LIKE '99900%'
 )
 INSERT INTO situaciones_hogar (aprendiz_id, caracterizacion_id, situacion_id)
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   (SELECT id FROM catalogos WHERE categoria = 'situacion_hogar' ORDER BY random() LIMIT 1)
@@ -446,7 +428,7 @@ WITH caracterizaciones_con_aprendiz AS (
   WHERE a.numero_documento LIKE '99900%'
 )
 INSERT INTO problematicas_sector (aprendiz_id, caracterizacion_id, problematica_id)
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   (SELECT id FROM catalogos WHERE categoria = 'problematica_sector' ORDER BY random() LIMIT 1)
@@ -461,7 +443,7 @@ WITH caracterizaciones_con_aprendiz AS (
   WHERE a.numero_documento LIKE '99900%'
 )
 INSERT INTO servicios_publicos (aprendiz_id, caracterizacion_id, servicio_id, tiene_servicio)
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   (SELECT id FROM catalogos WHERE categoria = 'servicio_publico' ORDER BY random() LIMIT 1),
@@ -480,7 +462,7 @@ INSERT INTO perfil_ocupacional (
   aprendiz_id, caracterizacion_id, nivel_formacion_previo_id,
   formacion_previa_sena, motivacion_id, trabaja_actualmente, lugar_horario_trabajo
 )
-SELECT 
+SELECT
   ca.aprendiz_id,
   ca.caracterizacion_id,
   (SELECT id FROM catalogos WHERE categoria = 'nivel_formacion_previo' ORDER BY random() LIMIT 1),
@@ -492,9 +474,7 @@ FROM caracterizaciones_con_aprendiz ca;
 
 COMMIT;
 
--- ============================================================
 -- CONSULTA DE VERIFICACIÓN
--- ============================================================
 SELECT 'aprendices' as tabla, count(*) as total FROM aprendices WHERE numero_documento LIKE '99900%'
 UNION ALL
 SELECT 'caracterizaciones', count(*) FROM caracterizaciones c JOIN aprendices a ON a.id = c.aprendiz_id WHERE a.numero_documento LIKE '99900%'

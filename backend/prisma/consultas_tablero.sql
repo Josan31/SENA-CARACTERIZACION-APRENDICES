@@ -1,10 +1,10 @@
--- ============================================================
+
 -- CONSULTAS DE EJEMPLO PARA EL TABLERO Y EL INFORME CONSOLIDADO
 -- Úsalas con datos de prueba. Supabase -> SQL Editor: resalta UNA
 -- consulta y dale Run.
 -- Los nombres de columnas siguen el diseño; si una consulta da error
 -- de columna o tabla, copia el mensaje y se ajusta.
--- ============================================================
+
 
 -- 1. Estado de las caracterizaciones
 SELECT estado, count(*) AS total
