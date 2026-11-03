@@ -94,9 +94,10 @@ export const PREGUNTAS_REQUERIDAS_TARJETAS: Record<string, { storeModulo: string
 export function calcularProgresoFormularios(
   caracterizacionBackend?: any
 ): ProgresoGeneral {
-  // Si en el backend ya está radicada la caracterización, todos los módulos registrados están al 100%
+  // Si en el backend ya está radicada/completa la caracterización, todos los módulos registrados están al 100%
   const esRadicada =
     caracterizacionBackend?.caracterizacion?.estado === 'RADICADA' ||
+    caracterizacionBackend?.caracterizacion?.estado === 'completa' ||
     caracterizacionBackend?.caracterizacion?.radicado != null;
 
   const radicado = caracterizacionBackend?.caracterizacion?.radicado || null;

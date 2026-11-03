@@ -26,7 +26,8 @@ import {
   Activity,
   Award,
 } from "lucide-react";
-import { obtenerMiCaracterizacion, MiCaracterizacionResponse } from "@/lib/caracterizacion";
+import { MiCaracterizacionResponse } from "@/lib/caracterizacion";
+import { getCaracterizacionCachedSync, fetchCaracterizacionSWR } from "@/lib/cacheCaracterizacion";
 import { getUser } from "@/lib/auth";
 
 type InfoRowProps = {
@@ -92,26 +93,21 @@ function ProfileAvatar({ nombre = "A", large = false }: { nombre?: string; large
 
 export default function PerfilAprendizPage() {
   const [activeTab, setActiveTab] = useState("personal");
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<MiCaracterizacionResponse | null>(null);
+  const [data, setData] = useState<MiCaracterizacionResponse | null>(() => getCaracterizacionCachedSync());
+  const [loading, setLoading] = useState(() => !getCaracterizacionCachedSync());
 
   useEffect(() => {
-    async function cargarPerfil() {
-      try {
-        setLoading(true);
-        const res = await obtenerMiCaracterizacion();
-        setData(res);
-      } catch (err) {
-        console.warn("No se pudo cargar caracterización activa:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    cargarPerfil();
+    fetchCaracterizacionSWR((fresh) => {
+      setData(fresh);
+      setLoading(false);
+    }).then((res) => {
+      if (res) setData(res);
+      setLoading(false);
+    });
   }, []);
 
   const user = getUser();
-  const aprendiz = data?.aprendiz;
+  const aprendiz = data?.caracterizacion?.aprendiz || data?.aprendiz;
   const caracterizacion = data?.caracterizacion;
   const localizacion = caracterizacion?.localizaciones?.[0];
   const salud = caracterizacion?.saludes?.[0];

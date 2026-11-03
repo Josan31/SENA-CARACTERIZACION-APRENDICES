@@ -426,6 +426,13 @@ export class CaracterizacionesService {
           { usuario: user.numeroDocumento || '' },
         ],
       },
+      include: {
+        tipoDocumento: true,
+        sexo: true,
+        orientacionSexual: true,
+        estadoCivil: true,
+        contactoEmergenciaParentesco: true,
+      },
     });
 
     if (!aprendiz) {
@@ -481,7 +488,7 @@ export class CaracterizacionesService {
     });
 
     return {
-      aprendiz,
+      aprendiz: caracterizacion?.aprendiz || aprendiz,
       caracterizacion: caracterizacion || null,
       estado: caracterizacion ? caracterizacion.estado : 'pendiente',
     };

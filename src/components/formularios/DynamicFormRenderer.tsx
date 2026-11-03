@@ -17,8 +17,17 @@ import {
   saveRespuestasModulo,
 } from "@/lib/formulariosStore";
 import { getUser } from "@/lib/auth";
-import { obtenerMiCaracterizacion } from "@/lib/caracterizacion";
-import { sincronizarRespuestasConStore } from "@/lib/sincronizacion";
+import {
+  getCaracterizacionCachedSync,
+  fetchCaracterizacionSWR,
+  subscribeCaracterizacionActualizada,
+} from "@/lib/cacheCaracterizacion";
+import {
+  normalizarTipoDoc,
+  normalizarSexo,
+  normalizarEstrato,
+  normalizarEstadoCivil,
+} from "@/lib/sincronizacion";
 
 interface DynamicFormRendererProps {
   moduloId: string;
@@ -32,6 +41,36 @@ interface DynamicFormRendererProps {
   esVistaPrevia?: boolean;
 }
 
+/**
+ * Resuelve de forma inteligente el valor de un select para que nunca quede vacío
+ * por diferencias sutiles de formato (ej: "TI" vs "TI - Tarjeta de Identidad").
+ */
+function resolverValorSelect(valorActual: any, opciones: string[]): string {
+  if (valorActual === undefined || valorActual === null || valorActual === "") return "";
+  const str = String(valorActual).trim();
+  
+  // 1. Coincidencia exacta directa
+  if (opciones.includes(str)) return str;
+
+  // 2. Coincidencia por código de documento prefijo (ej: "TI" -> "TI - Tarjeta de Identidad")
+  const matchPrefijo = opciones.find(
+    (op) =>
+      op.toLowerCase().startsWith(str.toLowerCase() + " -") ||
+      op.toLowerCase().startsWith(str.toLowerCase() + " ")
+  );
+  if (matchPrefijo) return matchPrefijo;
+
+  // 3. Coincidencia por inclusión de subcadena
+  const matchSub = opciones.find(
+    (op) =>
+      str.toLowerCase().includes(op.toLowerCase()) ||
+      op.toLowerCase().includes(str.toLowerCase())
+  );
+  if (matchSub) return matchSub;
+
+  return str;
+}
+
 export default function DynamicFormRenderer({
   moduloId,
   tituloModulo,
@@ -43,61 +82,75 @@ export default function DynamicFormRenderer({
   onSuccess,
   esVistaPrevia = false,
 }: DynamicFormRendererProps) {
-  const [preguntas, setPreguntas] = useState<PreguntaFormulario[]>([]);
-  const [respuestas, setRespuestas] = useState<Record<string, any>>({});
+  // Carga inicial 100% síncrona en 0ms para evitar parpadeos y FOUC
+  const [preguntas, setPreguntas] = useState<PreguntaFormulario[]>(() => {
+    return getPreguntasModulo(moduloId).filter((p) => p.activo !== false);
+  });
+
+  const [respuestas, setRespuestas] = useState<Record<string, any>>(() => {
+    const guardadas = getRespuestasModulo(moduloId);
+    const cached = getCaracterizacionCachedSync();
+    const user = getUser();
+
+    // Pre-cargar valores de identidad si están en memoria
+    if (moduloId === "basica") {
+      const ap = cached?.caracterizacion?.aprendiz || cached?.aprendiz;
+      if (!guardadas.nombre && (ap?.nombreCompleto || user?.nombre)) {
+        guardadas.nombre = ap?.nombreCompleto || user?.nombre;
+      }
+      if (!guardadas.numDoc && (ap?.numeroDocumento || user?.numeroDocumento)) {
+        guardadas.numDoc = ap?.numeroDocumento || user?.numeroDocumento;
+      }
+      if (!guardadas.tipoDoc) {
+        const rawT = ap?.tipoDocumento?.valor || user?.tipoDocumento;
+        if (rawT) guardadas.tipoDoc = normalizarTipoDoc(rawT);
+      }
+      if (!guardadas.correoPersonal && (ap?.correoPersonal || user?.correo)) {
+        guardadas.correoPersonal = ap?.correoPersonal || user?.correo;
+      }
+      if (!guardadas.sexo && ap?.sexo?.valor) {
+        guardadas.sexo = normalizarSexo(ap.sexo.valor);
+      }
+    }
+    return guardadas;
+  });
+
   const [guardadoExito, setGuardadoExito] = useState(false);
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Cargar preguntas y respuestas con sincronización bidireccional
-  const cargarDatos = async () => {
+  // Revalidación en segundo plano (SWR) sin bloquear la interfaz
+  useEffect(() => {
+    // 1. Cargar preguntas actualizadas
     const list = getPreguntasModulo(moduloId);
     setPreguntas(list.filter((p) => p.activo !== false));
-    const guardadas = getRespuestasModulo(moduloId);
 
-    const user = getUser();
-    if (user) {
-      if (moduloId === "basica") {
-        if (!guardadas.nombre && user.nombre) guardadas.nombre = user.nombre;
-        if (!guardadas.numDoc && user.numeroDocumento) guardadas.numDoc = user.numeroDocumento;
-        if (!guardadas.tipoDoc && user.tipoDocumento) {
-          if (user.tipoDocumento === "TI") guardadas.tipoDoc = "TI - Tarjeta de Identidad";
-          else if (user.tipoDocumento === "CC") guardadas.tipoDoc = "CC - Cédula de Ciudadanía";
-          else if (user.tipoDocumento === "CE") guardadas.tipoDoc = "CE - Cédula de Extranjería";
-          else if (user.tipoDocumento === "PPT") guardadas.tipoDoc = "PPT - Permiso por Protección Temporal";
-        }
-        if (!guardadas.correoPersonal && user.correo) guardadas.correoPersonal = user.correo;
-      }
+    // 2. Disparar SWR silencioso
+    fetchCaracterizacionSWR(() => {
+      const actualizadas = getRespuestasModulo(moduloId);
+      setRespuestas((prev) => ({
+        ...actualizadas,
+        ...prev, // Preservar inputs que el usuario ya esté tipeando
+      }));
+    });
 
-      try {
-        const resBackend = await obtenerMiCaracterizacion();
-        if (resBackend && resBackend.aprendiz) {
-          await sincronizarRespuestasConStore(resBackend);
-          const actualizadas = getRespuestasModulo(moduloId);
-          setRespuestas(actualizadas);
-          return;
-        }
-      } catch (err) {
-        console.warn("No se pudo sincronizar con backend, usando store local:", err);
-      }
-    }
+    // 3. Escuchar actualizaciones externas o de background
+    const unsubscribeCache = subscribeCaracterizacionActualizada(() => {
+      const act = getRespuestasModulo(moduloId);
+      setRespuestas((prev) => ({ ...act, ...prev }));
+    });
 
-    setRespuestas(guardadas);
-  };
-
-  useEffect(() => {
-    cargarDatos();
-
-    // Sincronización en tiempo real con cambios realizados por el administrador
-    const handleActualizacion = (e: any) => {
+    const handleActualizacionPreguntas = (e: any) => {
       if (!e.detail || e.detail.moduloId === moduloId) {
-        cargarDatos();
+        setPreguntas(getPreguntasModulo(moduloId).filter((p) => p.activo !== false));
       }
     };
 
-    window.addEventListener("sena_preguntas_actualizadas", handleActualizacion);
+    window.addEventListener("sena_preguntas_actualizadas", handleActualizacionPreguntas);
+
     return () => {
-      window.removeEventListener("sena_preguntas_actualizadas", handleActualizacion);
+      unsubscribeCache();
+      window.removeEventListener("sena_preguntas_actualizadas", handleActualizacionPreguntas);
     };
   }, [moduloId]);
 
@@ -356,7 +409,7 @@ export default function DynamicFormRenderer({
 
                         {p.tipo === "select" && (
                           <select
-                            value={valorActual}
+                            value={resolverValorSelect(valorActual, p.opciones || [])}
                             onChange={(e) => handleChange(p.id, e.target.value)}
                             className={`w-full rounded-xl border ${
                               error

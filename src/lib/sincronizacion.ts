@@ -4,7 +4,7 @@ import { saveRespuestasModulo, getRespuestasModulo } from './formulariosStore';
 /**
  * Normaliza y formatea una fecha ISO a YYYY-MM-DD para inputs HTML de tipo date.
  */
-function formatearFechaInput(fechaIso?: string | null): string | undefined {
+export function formatearFechaInput(fechaIso?: string | null): string | undefined {
   if (!fechaIso) return undefined;
   try {
     const d = new Date(fechaIso);
@@ -18,7 +18,7 @@ function formatearFechaInput(fechaIso?: string | null): string | undefined {
 /**
  * Calcula la edad en años a partir de una fecha de nacimiento ISO o YYYY-MM-DD.
  */
-function calcularEdad(fechaIso?: string | null): number | undefined {
+export function calcularEdad(fechaIso?: string | null): number | undefined {
   if (!fechaIso) return undefined;
   try {
     const nac = new Date(fechaIso);
@@ -34,7 +34,7 @@ function calcularEdad(fechaIso?: string | null): number | undefined {
 /**
  * Normaliza el tipo de documento para coincidir con las opciones del formulario
  */
-function normalizarTipoDoc(val?: string | null): string | undefined {
+export function normalizarTipoDoc(val?: string | null): string | undefined {
   if (!val) return undefined;
   const upper = val.toUpperCase().trim();
   if (upper === 'TI' || upper.startsWith('TI -') || upper.includes('IDENTIDAD')) return 'TI - Tarjeta de Identidad';
@@ -47,7 +47,7 @@ function normalizarTipoDoc(val?: string | null): string | undefined {
 /**
  * Normaliza el sexo para coincidir con las opciones: "Hombre" | "Mujer" | "Intersexual"
  */
-function normalizarSexo(val?: string | null): string | undefined {
+export function normalizarSexo(val?: string | null): string | undefined {
   if (!val) return undefined;
   const lower = val.toLowerCase().trim();
   if (lower.startsWith('fem') || lower === 'mujer') return 'Mujer';
@@ -59,7 +59,7 @@ function normalizarSexo(val?: string | null): string | undefined {
 /**
  * Normaliza estrato socioeconómico (ej. "2" -> "Estrato 2")
  */
-function normalizarEstrato(val?: string | null): string | undefined {
+export function normalizarEstrato(val?: string | null): string | undefined {
   if (!val) return undefined;
   const trim = val.trim();
   if (/^[1-6]$/.test(trim)) return `Estrato ${trim}`;
@@ -69,7 +69,7 @@ function normalizarEstrato(val?: string | null): string | undefined {
 /**
  * Normaliza estado civil
  */
-function normalizarEstadoCivil(val?: string | null): string | undefined {
+export function normalizarEstadoCivil(val?: string | null): string | undefined {
   if (!val) return undefined;
   const lower = val.toLowerCase().trim();
   if (lower.startsWith('solter')) return 'Soltero(a)';
@@ -90,7 +90,8 @@ export function mapearDatosBackendAFormularios(data: MiCaracterizacionResponse):
   socioeconomica: Record<string, any>;
   formativo: Record<string, any>;
 } {
-  const aprendiz = data.aprendiz;
+  // Tomar el aprendiz más completo disponible
+  const aprendiz = data.caracterizacion?.aprendiz || data.aprendiz;
   const c = data.caracterizacion;
 
   const loc = c?.localizaciones?.[0];
@@ -105,8 +106,9 @@ export function mapearDatosBackendAFormularios(data: MiCaracterizacionResponse):
   const basica: Record<string, any> = {};
   if (aprendiz) {
     if (aprendiz.nombreCompleto) basica.nombre = aprendiz.nombreCompleto;
-    if (aprendiz.tipoDocumento?.valor || (aprendiz as any).tipoDoc) {
-      basica.tipoDoc = normalizarTipoDoc(aprendiz.tipoDocumento?.valor || (aprendiz as any).tipoDoc);
+    const rawTipoDoc = aprendiz.tipoDocumento?.valor || (aprendiz as any).tipoDoc || (aprendiz as any).tipoDocumento;
+    if (rawTipoDoc) {
+      basica.tipoDoc = normalizarTipoDoc(typeof rawTipoDoc === 'string' ? rawTipoDoc : rawTipoDoc.valor);
     }
     if (aprendiz.numeroDocumento) basica.numDoc = aprendiz.numeroDocumento;
     if (aprendiz.fechaNacimiento) {
@@ -203,7 +205,8 @@ export function mapearDatosBackendAFormularios(data: MiCaracterizacionResponse):
 
 /**
  * Guarda en el store local (localStorage) las respuestas mapeadas desde el backend,
- * respetando cualquier borrador reciente que el usuario esté editando.
+ * respetando cualquier borrador reciente que el usuario esté editando pero sin
+ * permitir que campos vacíos borren campos ya conocidos del backend.
  */
 export async function sincronizarRespuestasConStore(data: MiCaracterizacionResponse): Promise<void> {
   const mapeados = mapearDatosBackendAFormularios(data);
@@ -211,11 +214,30 @@ export async function sincronizarRespuestasConStore(data: MiCaracterizacionRespo
 
   for (const m of modulos) {
     const existentes = getRespuestasModulo(m);
-    // Fusionar: los campos mapeados sirven de base y se combinan con cualquier cambio local
+    
+    // Filtrar existentes para no sobreescribir con strings vacíos o undefined
+    const existentesValidos: Record<string, any> = {};
+    for (const [k, v] of Object.entries(existentes)) {
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        if (k === 'tipoDoc') {
+          existentesValidos[k] = normalizarTipoDoc(v) || v;
+        } else if (k === 'sexo') {
+          existentesValidos[k] = normalizarSexo(v) || v;
+        } else if (k === 'estrato') {
+          existentesValidos[k] = normalizarEstrato(v) || v;
+        } else if (k === 'estadoCivil') {
+          existentesValidos[k] = normalizarEstadoCivil(v) || v;
+        } else {
+          existentesValidos[k] = v;
+        }
+      }
+    }
+
     const fusionados = {
       ...mapeados[m],
-      ...existentes,
+      ...existentesValidos,
     };
+
     await saveRespuestasModulo(m, fusionados, data.aprendiz.numeroDocumento);
   }
 }

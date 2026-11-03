@@ -25,10 +25,14 @@ import { getUser } from "@/lib/auth";
 import { getRespuestasModulo } from "@/lib/formulariosStore";
 import {
   guardarCaracterizacionCompleta,
-  obtenerMiCaracterizacion,
   MiCaracterizacionResponse,
 } from "@/lib/caracterizacion";
-import { sincronizarRespuestasConStore } from "@/lib/sincronizacion";
+import {
+  getCaracterizacionCachedSync,
+  fetchCaracterizacionSWR,
+  invalidarCacheCaracterizacion,
+  subscribeCaracterizacionActualizada,
+} from "@/lib/cacheCaracterizacion";
 import {
   calcularProgresoFormularios,
   ProgresoGeneral,
@@ -369,9 +373,27 @@ function AprendizFormulariosContent() {
   const [showRecaracterizacionInfo, setShowRecaracterizacionInfo] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
-  const [usuario, setUsuario] = useState<any>(null);
-  const [caracterizacionData, setCaracterizacionData] = useState<MiCaracterizacionResponse | null>(null);
-  const [progreso, setProgreso] = useState<ProgresoGeneral>(() => calcularProgresoFormularios());
+
+  // Inicialización 100% síncrona en 0ms desde la caché SWR de sesión
+  const [usuario, setUsuario] = useState<any>(() => {
+    const cached = getCaracterizacionCachedSync();
+    const ap = cached?.caracterizacion?.aprendiz || cached?.aprendiz;
+    const u = getUser();
+    return {
+      ...u,
+      nombre: ap?.nombreCompleto || u?.nombre || "Valentina Gómez Mejía",
+      tipoDocumento: ap?.tipoDocumento?.valor || u?.tipoDocumento || "TI",
+      numeroDocumento: ap?.numeroDocumento || u?.numeroDocumento || "109989001",
+      programa: u?.programa || "Tecnólogo en Análisis y Desarrollo de Software",
+      ficha: u?.ficha || "2670142",
+    };
+  });
+
+  const [progreso, setProgreso] = useState<ProgresoGeneral>(() => {
+    const cached = getCaracterizacionCachedSync();
+    return calcularProgresoFormularios(cached || undefined);
+  });
+
   const [radicadoGenerado, setRadicadoGenerado] = useState<{
     radicado: string;
     fechaRadicado: string;
@@ -382,28 +404,32 @@ function AprendizFormulariosContent() {
     centro: string;
   } | null>(null);
 
-  // Sincronizar datos y calcular progreso real
-  const refrescarDatosYProgreso = async () => {
-    const u = getUser();
-    setUsuario(u);
-
-    try {
-      const resBackend = await obtenerMiCaracterizacion();
-      if (resBackend && resBackend.aprendiz) {
-        setCaracterizacionData(resBackend);
-        await sincronizarRespuestasConStore(resBackend);
-        setProgreso(calcularProgresoFormularios(resBackend));
-      } else {
-        setProgreso(calcularProgresoFormularios());
-      }
-    } catch (err) {
-      console.warn("No se pudo cargar caracterización del backend:", err);
-      setProgreso(calcularProgresoFormularios());
-    }
-  };
-
+  // Revalidación SWR en segundo plano (0ms de bloqueo visual)
   useEffect(() => {
-    refrescarDatosYProgreso();
+    const u = getUser();
+    if (u) {
+      setUsuario((prev: any) => ({ ...prev, ...u }));
+    }
+
+    // Revalidar silenciosamente contra el servidor
+    fetchCaracterizacionSWR((freshData) => {
+      const freshAp = freshData.caracterizacion?.aprendiz || freshData.aprendiz;
+      setUsuario((prev: any) => ({
+        ...prev,
+        nombre: freshAp?.nombreCompleto || prev?.nombre,
+        tipoDocumento: freshAp?.tipoDocumento?.valor || prev?.tipoDocumento,
+        numeroDocumento: freshAp?.numeroDocumento || prev?.numeroDocumento,
+      }));
+      setProgreso(calcularProgresoFormularios(freshData));
+    });
+
+    const unsubscribe = subscribeCaracterizacionActualizada((fresh) => {
+      setProgreso(calcularProgresoFormularios(fresh));
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [selectedForm]);
 
   const handleFinalizarCaracterizacion = async () => {
@@ -444,7 +470,11 @@ function AprendizFormulariosContent() {
         centro: user?.centro || "Centro de Teleinformática y Producción Industrial - Regional Cauca",
       });
 
-      await refrescarDatosYProgreso();
+      invalidarCacheCaracterizacion();
+      fetchCaracterizacionSWR((fresh) => {
+        setProgreso(calcularProgresoFormularios(fresh));
+      });
+
       setSelectedForm("reportes");
     } catch (err: any) {
       console.error("Error al finalizar caracterización:", err);
@@ -499,7 +529,7 @@ function AprendizFormulariosContent() {
                 linkVolver=""
                 textoBotonSiguiente="Guardar y Continuar a Salud"
                 onSuccess={() => {
-                  refrescarDatosYProgreso();
+                  setProgreso(calcularProgresoFormularios(getCaracterizacionCachedSync() || undefined));
                   setSelectedForm("salud_fisica");
                 }}
               />
@@ -513,7 +543,7 @@ function AprendizFormulariosContent() {
                 linkVolver=""
                 textoBotonSiguiente="Guardar y Continuar a Socioeconómica"
                 onSuccess={() => {
-                  refrescarDatosYProgreso();
+                  setProgreso(calcularProgresoFormularios(getCaracterizacionCachedSync() || undefined));
                   setSelectedForm("socioeconomica");
                 }}
               />
@@ -527,7 +557,7 @@ function AprendizFormulariosContent() {
                 linkVolver=""
                 textoBotonSiguiente="Guardar y Continuar"
                 onSuccess={() => {
-                  refrescarDatosYProgreso();
+                  setProgreso(calcularProgresoFormularios(getCaracterizacionCachedSync() || undefined));
                   setSelectedForm(null);
                 }}
               />
@@ -541,7 +571,7 @@ function AprendizFormulariosContent() {
                 linkVolver=""
                 textoBotonSiguiente="Guardar y Continuar a Perfil Formativo"
                 onSuccess={() => {
-                  refrescarDatosYProgreso();
+                  setProgreso(calcularProgresoFormularios(getCaracterizacionCachedSync() || undefined));
                   setSelectedForm("formativo");
                 }}
               />
@@ -686,14 +716,11 @@ function AprendizFormulariosContent() {
 
         {/* ── CUADRÍCULA DE LAS 6 TARJETAS (3 COLUMNAS X 2 FILAS) ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 pt-2">
-          {/* ══════════════════════════════════════════════════════════════════
-              CARD 1: Información Básica y Localización.
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* CARD 1: Información Básica y Localización */}
           <article
             onClick={() => setSelectedForm("basica")}
             className="group relative flex flex-col justify-between rounded-3xl bg-white p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer overflow-hidden min-h-[195px]"
           >
-            {/* Triángulo verde superior izquierdo (#39b54a) */}
             <div
               className="absolute top-0 left-0 w-7 h-7 pointer-events-none"
               style={{
@@ -702,8 +729,6 @@ function AprendizFormulariosContent() {
               }}
               aria-hidden="true"
             />
-
-            {/* Cabecera con Ilustración y Título */}
             <div className="flex items-start gap-4">
               <InformacionBasicaIcon />
               <div className="flex-1 pt-1">
@@ -713,8 +738,6 @@ function AprendizFormulariosContent() {
                 </h2>
               </div>
             </div>
-
-            {/* Pie de Tarjeta: Estado Dinámico + Chevron derecho */}
             <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-50">
               <BadgeEstadoTarjeta
                 estado={progreso.modulos.basica?.estado || "pendiente"}
@@ -727,14 +750,11 @@ function AprendizFormulariosContent() {
             </div>
           </article>
 
-          {/* ══════════════════════════════════════════════════════════════════
-              CARD 2: Salud y Condición Física.
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* CARD 2: Salud y Condición Física */}
           <article
             onClick={() => setSelectedForm("salud_fisica")}
             className="group relative flex flex-col justify-between rounded-3xl bg-white p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer overflow-hidden min-h-[195px]"
           >
-            {/* Triángulo verde superior izquierdo */}
             <div
               className="absolute top-0 left-0 w-7 h-7 pointer-events-none"
               style={{
@@ -743,8 +763,6 @@ function AprendizFormulariosContent() {
               }}
               aria-hidden="true"
             />
-
-            {/* Cabecera con Ilustración y Título */}
             <div className="flex items-start gap-4">
               <SaludCondicionFisicaIcon />
               <div className="flex-1 pt-1">
@@ -754,8 +772,6 @@ function AprendizFormulariosContent() {
                 </h2>
               </div>
             </div>
-
-            {/* Pie de Tarjeta: Estado Dinámico + Chevron derecho */}
             <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-50">
               <BadgeEstadoTarjeta
                 estado={progreso.modulos.salud_fisica?.estado || "pendiente"}
@@ -768,14 +784,11 @@ function AprendizFormulariosContent() {
             </div>
           </article>
 
-          {/* ══════════════════════════════════════════════════════════════════
-              CARD 3: Salud Sexual y Reproductiva.
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* CARD 3: Salud Sexual y Reproductiva */}
           <article
             onClick={() => setSelectedForm("salud_sexual")}
             className="group relative flex flex-col justify-between rounded-3xl bg-white p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer overflow-hidden min-h-[195px]"
           >
-            {/* Triángulo morado superior izquierdo (#7b2cbf) */}
             <div
               className="absolute top-0 left-0 w-7 h-7 pointer-events-none"
               style={{
@@ -784,8 +797,6 @@ function AprendizFormulariosContent() {
               }}
               aria-hidden="true"
             />
-
-            {/* Triángulo amarillo superior derecho (#fdc300) */}
             <div
               className="absolute top-0 right-0 w-7 h-7 pointer-events-none"
               style={{
@@ -794,8 +805,6 @@ function AprendizFormulariosContent() {
               }}
               aria-hidden="true"
             />
-
-            {/* Cabecera con Ilustración, Título y Chevron a la derecha del título */}
             <div className="flex items-start gap-4">
               <SaludSexualReproductivaIcon />
               <div className="flex-1 flex items-start justify-between gap-2 pt-1">
@@ -808,8 +817,6 @@ function AprendizFormulariosContent() {
                 </div>
               </div>
             </div>
-
-            {/* Estado Dinámico, Candado de Seguridad y Alerta de Confidencialidad */}
             <div className="pt-3 mt-2 border-t border-slate-50 space-y-1.5">
               <div className="flex items-center justify-between">
                 <BadgeEstadoTarjeta
@@ -826,14 +833,11 @@ function AprendizFormulariosContent() {
             </div>
           </article>
 
-          {/* ══════════════════════════════════════════════════════════════════
-              CARD 4: Situación Socioeconómica.
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* CARD 4: Situación Socioeconómica */}
           <article
             onClick={() => setSelectedForm("socioeconomica")}
             className="group relative flex flex-col justify-between rounded-3xl bg-white p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer overflow-hidden min-h-[195px]"
           >
-            {/* Triángulo verde superior izquierdo */}
             <div
               className="absolute top-0 left-0 w-7 h-7 pointer-events-none"
               style={{
@@ -842,8 +846,6 @@ function AprendizFormulariosContent() {
               }}
               aria-hidden="true"
             />
-
-            {/* Cabecera con Ilustración y Título */}
             <div className="flex items-start gap-4">
               <SituacionSocioeconomicaIcon />
               <div className="flex-1 pt-1">
@@ -853,8 +855,6 @@ function AprendizFormulariosContent() {
                 </h2>
               </div>
             </div>
-
-            {/* Pie de Tarjeta: Estado Dinámico + Chevron derecho */}
             <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-50">
               <BadgeEstadoTarjeta
                 estado={progreso.modulos.socioeconomica?.estado || "pendiente"}
@@ -867,14 +867,11 @@ function AprendizFormulariosContent() {
             </div>
           </article>
 
-          {/* ══════════════════════════════════════════════════════════════════
-              CARD 5: Perfil Formativo y Vacunación COVID-19.
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* CARD 5: Perfil Formativo y Vacunación COVID-19 */}
           <article
             onClick={() => setSelectedForm("formativo")}
             className="group relative flex flex-col justify-between rounded-3xl bg-white p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer overflow-hidden min-h-[195px]"
           >
-            {/* Triángulo morado superior izquierdo (#7b2cbf) */}
             <div
               className="absolute top-0 left-0 w-7 h-7 pointer-events-none"
               style={{
@@ -883,8 +880,6 @@ function AprendizFormulariosContent() {
               }}
               aria-hidden="true"
             />
-
-            {/* Cabecera con Ilustración y Título */}
             <div className="flex items-start gap-4">
               <PerfilFormativoIcon />
               <div className="flex-1 pt-1">
@@ -894,8 +889,6 @@ function AprendizFormulariosContent() {
                 </h2>
               </div>
             </div>
-
-            {/* Pie de Tarjeta: Estado Dinámico + Chevron derecho */}
             <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-50">
               <BadgeEstadoTarjeta
                 estado={progreso.modulos.formativo?.estado || "pendiente"}
@@ -908,11 +901,8 @@ function AprendizFormulariosContent() {
             </div>
           </article>
 
-          {/* ══════════════════════════════════════════════════════════════════
-              CARD 6: Reportes y Asesoría Directa.
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* CARD 6: Reportes y Asesoría Directa */}
           <article className="group relative flex flex-col justify-between rounded-3xl bg-white p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all overflow-hidden min-h-[195px]">
-            {/* Triángulo verde superior izquierdo */}
             <div
               className="absolute top-0 left-0 w-7 h-7 pointer-events-none"
               style={{
@@ -921,8 +911,6 @@ function AprendizFormulariosContent() {
               }}
               aria-hidden="true"
             />
-
-            {/* Triángulo azul oscuro superior derecho (#00304d) */}
             <div
               className="absolute top-0 right-0 w-7 h-7 pointer-events-none"
               style={{
@@ -931,8 +919,6 @@ function AprendizFormulariosContent() {
               }}
               aria-hidden="true"
             />
-
-            {/* Cabecera con Ilustración, Título y Chevron a la derecha */}
             <div className="flex items-start gap-4">
               <ReportesAsesoriaIcon />
               <div className="flex-1 flex items-start justify-between gap-2 pt-1">
@@ -950,8 +936,6 @@ function AprendizFormulariosContent() {
                 </button>
               </div>
             </div>
-
-            {/* Estado Disponible + Botón Generar Reporte Personal */}
             <div className="pt-3 mt-2 border-t border-slate-50 space-y-2.5">
               <div className="flex items-center gap-2">
                 <span
@@ -965,8 +949,6 @@ function AprendizFormulariosContent() {
                     : "Pendiente de radicación"}
                 </span>
               </div>
-
-              {/* Botón Verde: Generar Reporte Personal > */}
               <button
                 type="button"
                 onClick={() => router.push("/aprendiz/resultados")}
