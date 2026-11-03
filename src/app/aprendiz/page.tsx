@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -175,7 +176,7 @@ export default function AprendizInicioPage() {
             <div className="lg:col-span-5 rounded-2xl bg-gradient-to-br from-[#e8f8f3] via-[#d6f2e8] to-[#c7ece0] p-6 flex flex-col items-center justify-center text-center space-y-4 border border-[#bce8d7]">
               <div className="relative w-44 h-44 sm:w-52 sm:h-52 drop-shadow-md">
                 <Image
-                  src="/hero-illustration.svg"
+                  src="/admin-images/consent-illustration.jpg"
                   alt="Ilustración Consentimiento SENA"
                   fill
                   className="object-contain"
