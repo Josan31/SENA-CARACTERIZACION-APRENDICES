@@ -6,7 +6,7 @@ import {
   FileText,
   Home,
   LogOut,
-  Settings,
+  Download,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,7 +27,9 @@ const NAV_SECTIONS = [
   },
   {
     heading: "Gestión",
-    items: [{ href: "/admin", label: "Administración", icon: Settings }],
+    items: [
+      { href: "/aprendiz/descargas", label: "Descargas", icon: Download },
+    ],
   },
 ] as const;
 
