@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty({
@@ -18,4 +18,12 @@ export class LoginDto {
   @IsString({ message: 'La contraseña debe ser una cadena de texto' })
   @MinLength(4, { message: 'La contraseña debe tener al menos 4 caracteres' })
   password: string;
+
+  @ApiPropertyOptional({
+    description: 'Tipo de documento (CC, TI, CE, PEP, PPT, PAS)',
+    example: 'CC',
+  })
+  @IsOptional()
+  @IsString({ message: 'El tipo de documento debe ser una cadena de texto' })
+  tipoDocumento?: string;
 }

@@ -16,7 +16,10 @@ export class AuthUserDto {
   @ApiProperty({ description: 'Tipo de cuenta', enum: ['funcionario', 'aprendiz'], example: 'funcionario' })
   tipo: 'funcionario' | 'aprendiz';
 
-  @ApiPropertyOptional({ description: 'Número de documento (para aprendices)', example: '109989001' })
+  @ApiPropertyOptional({ description: 'Tipo de documento (CC, TI, etc.)', example: 'CC' })
+  tipoDocumento?: string;
+
+  @ApiPropertyOptional({ description: 'Número de documento', example: '109989001' })
   numeroDocumento?: string;
 
   @ApiPropertyOptional({ description: 'Ficha de formación activa', example: '2670142' })

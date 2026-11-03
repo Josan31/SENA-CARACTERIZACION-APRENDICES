@@ -9,6 +9,7 @@ export interface JwtPayload {
   correo: string;
   rol: string;
   tipo: 'funcionario' | 'aprendiz';
+  tipoDocumento?: string;
   numeroDocumento?: string;
   ficha?: string;
   programa?: string;

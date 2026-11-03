@@ -45,6 +45,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { useCurrentUser, getInitials } from "@/hooks/useCurrentUser";
+import { clearSession } from "@/lib/auth";
 
 /* ─────────────────────────────────────────────────────────
    Helpers
@@ -338,7 +339,7 @@ export default function DashboardHeader() {
                   id="menu-cerrar-sesion"
                   onClick={() => {
                     if (typeof window !== "undefined") {
-                      try { localStorage.removeItem("sena_user"); } catch { /* ignore */ }
+                      clearSession();
                       window.location.href = "/login";
                     }
                   }}

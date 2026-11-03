@@ -1,3 +1,4 @@
+import { clearSession } from "@/lib/auth";
 "use client";
 
 import React from "react";
@@ -30,16 +31,9 @@ export default function SidebarAprendiz() {
   }
 
   function handleLogout() {
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.removeItem("sena_user");
-      } catch {
-        // ignore
-      }
-      window.location.href = "/login";
-    }
+    clearSession();
+    window.location.href = "/login";
   }
-
   return (
     <aside className="relative flex h-full w-60 shrink-0 flex-col justify-between overflow-hidden bg-[#004e26] text-white font-primary shadow-2xl select-none">
       {/* ── Brand Header Institucional SENA ── */}

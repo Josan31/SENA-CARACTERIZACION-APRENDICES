@@ -1,7 +1,9 @@
 "use client";
 
 import { authenticate } from "@/lib/users";
+import { saveSession } from "@/lib/auth";
 import {
+  AlertCircle,
   ArrowRight,
   ClipboardList,
   CreditCard,
@@ -148,6 +150,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           identificador: cleanDoc,
           password: cleanPass,
+          tipoDocumento: docType,
         }),
       });
 
@@ -165,16 +168,13 @@ export default function LoginPage() {
 
       if (typeof window !== "undefined" && resJson.data) {
         const authData = resJson.data;
-        if (authData.accessToken) {
-          localStorage.setItem("sena_token", authData.accessToken);
-        }
-        if (authData.user) {
+        if (authData.accessToken && authData.user) {
           const userPayload = {
             ...authData.user,
             tipoDocumento: authData.user.tipoDocumento || docType || "CC",
             numeroDocumento: authData.user.numeroDocumento || cleanDoc,
           };
-          localStorage.setItem("sena_user", JSON.stringify(userPayload));
+          saveSession(authData.accessToken, userPayload);
         }
 
         if (authData.user?.rol === "admin") {
@@ -410,12 +410,15 @@ export default function LoginPage() {
             />
 
             {error && (
-              <p
+              <div
                 role="alert"
-                className="text-xs font-medium text-red-500 text-center"
+                className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50/90 p-3 text-left transition-all animate-in fade-in slide-in-from-top-1"
               >
-                {error}
-              </p>
+                <AlertCircle className="h-5 w-5 shrink-0 text-red-600 mt-0.5" />
+                <p className="text-xs font-semibold leading-relaxed text-red-800">
+                  {error}
+                </p>
+              </div>
             )}
 
             <button
