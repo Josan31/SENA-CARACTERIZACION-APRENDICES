@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -8,17 +9,17 @@ import {
   Home,
   FileText,
   BarChart2,
-  Settings,
   User,
   ChevronRight,
   LogOut,
+  Download,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/aprendiz", label: "Inicio", icon: Home },
   { href: "/aprendiz/formularios", label: "Formulario", icon: FileText },
   { href: "/aprendiz/resultados", label: "Resultados", icon: BarChart2 },
-  { href: "/admin", label: "Administración", icon: Settings },
+  { href: "/aprendiz/descargas", label: "Descargas", icon: Download },
 ] as const;
 
 export default function SidebarAprendiz() {
@@ -42,7 +43,8 @@ export default function SidebarAprendiz() {
 
   return (
     <aside className="relative flex h-full w-60 shrink-0 flex-col justify-between overflow-hidden bg-[#004e26] text-white font-primary shadow-2xl select-none">
-      {/* ── Brand Header Institucional SENA ── */}
+
+      {/* ENCABEZADO INSTITUCIONAL SENA */}
       <div>
         <div className="flex items-center gap-3 px-6 pt-6 pb-4">
           <div className="relative flex h-11 w-11 shrink-0 items-center justify-center">
@@ -55,20 +57,26 @@ export default function SidebarAprendiz() {
               priority
             />
           </div>
+
           <div className="flex flex-col leading-tight">
             <span className="text-[11px] font-medium text-white/90">Más</span>
             <span className="text-xs font-black tracking-wide text-white uppercase">
               personas
             </span>
-            <span className="text-[10px] font-medium text-[#fdc300] mt-0.5">Más</span>
+            <span className="text-[10px] font-medium text-[#fdc300] mt-0.5">
+              Más
+            </span>
             <span className="text-[11px] font-black tracking-wide text-[#fdc300] uppercase">
               oportunidades
             </span>
           </div>
         </div>
 
-        {/* ── Menú de Navegación ── */}
-        <nav className="px-4 py-4 space-y-2" aria-label="Menú del Aprendiz">
+        {/* MENÚ DE NAVEGACIÓN */}
+        <nav
+          className="px-4 py-4 space-y-2"
+          aria-label="Menú del Aprendiz"
+        >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -91,24 +99,19 @@ export default function SidebarAprendiz() {
         </nav>
       </div>
 
-      {/* ── Sección Inferior con Ribbons y Perfil ── */}
+      {/* SECCIÓN INFERIOR: PERFIL Y CERRAR SESIÓN */}
       <div className="relative pt-12 pb-6 px-4">
-        {/* Cintas/Ribbons institucionales diagonales en esquina inferior izquierda */}
+
+        {/* CINTAS INSTITUCIONALES */}
         <div
           className="absolute left-0 bottom-0 w-36 h-36 pointer-events-none overflow-hidden opacity-90 z-0"
           aria-hidden="true"
         >
-          {/* Cinta Amarilla */}
-          <div
-            className="absolute -bottom-8 -left-8 w-32 h-16 bg-[#fdc300] -rotate-45 transform origin-bottom-left"
-          />
-          {/* Cinta Azul Marina */}
-          <div
-            className="absolute -bottom-10 left-6 w-36 h-12 bg-[#00304d] -rotate-45 transform origin-bottom-left"
-          />
+          <div className="absolute -bottom-8 -left-8 w-32 h-16 bg-[#fdc300] -rotate-45 transform origin-bottom-left" />
+          <div className="absolute -bottom-10 left-6 w-36 h-12 bg-[#00304d] -rotate-45 transform origin-bottom-left" />
         </div>
 
-        {/* Botón de Perfil en Cápsula */}
+        {/* BOTÓN DE PERFIL */}
         <div className="relative z-10 space-y-2">
           <Link
             href="/aprendiz/perfil"
@@ -118,17 +121,19 @@ export default function SidebarAprendiz() {
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#004e26]">
                 <User size={15} strokeWidth={2.4} />
               </div>
+
               <span className="text-xs font-bold text-white tracking-wide">
                 Perfil
               </span>
             </div>
+
             <ChevronRight
               size={15}
               className="text-white/60 group-hover:text-white group-hover:translate-x-0.5 transition-all"
             />
           </Link>
 
-          {/* Botón sutil de Cerrar Sesión */}
+          {/* CERRAR SESIÓN */}
           <button
             type="button"
             onClick={handleLogout}
