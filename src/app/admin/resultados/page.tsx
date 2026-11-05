@@ -148,13 +148,22 @@ export default function ResultadosPage() {
         {/* ── Right: summary panel ── */}
         <aside className="hidden w-72 shrink-0 xl:flex xl:flex-col gap-5">
 
-          {/* Illustration placeholder */}
+          {/* Illustration */}
           <div className="relative h-44 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#e8f8f0] to-[#c8eedd]">
+            {/* Ruido de fondo sutil */}
+            <div className="absolute inset-0 pointer-events-none opacity-40 mix-blend-multiply z-0" aria-hidden="true">
+              <Image
+                src="/login-images/bg-noise-login.png"
+                alt=""
+                fill
+                className="object-cover"
+              />
+            </div>
             <Image
-              src="/images/resultados-illustration.png"
+              src="/admin-images/administración-de-resultados.png"
               alt="Ilustración administración de resultados"
               fill
-              className="object-contain object-center p-4"
+              className="relative z-10 object-contain object-center p-4 drop-shadow-md"
               sizes="288px"
             />
           </div>

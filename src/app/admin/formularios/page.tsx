@@ -208,139 +208,25 @@ function AdminFormativoIcon() {
   );
 }
 
-/** Ilustración de "Crear Nuevo Formulario": Estudiante en laptop frente a formulario digital */
+/** Ilustración de "Crear Nuevo Formulario" */
 function CrearFormularioIllustration() {
   return (
-    <div className="relative w-full h-44 sm:h-48 flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-[#e8f7f3] via-[#f0fbf7] to-white p-2">
-      <svg viewBox="0 0 340 190" className="w-full h-full" fill="none">
-        {/* Hojas / Vegetación en fondo izquierdo */}
-        <g opacity="0.85">
-          <path
-            d="M50 140C30 130 20 100 35 70C55 85 65 115 50 140Z"
-            fill="#10b981"
-          />
-          <path
-            d="M70 145C60 120 70 85 95 65C105 90 95 125 70 145Z"
-            fill="#059669"
-          />
-          <path
-            d="M30 160C15 145 25 120 45 110C55 130 45 150 30 160Z"
-            fill="#34d399"
-          />
-        </g>
-
-        {/* Tablero / Portapapeles digital gigante */}
-        <g transform="translate(115, 20)">
-          {/* Sombra suave */}
-          <rect
-            x="4"
-            y="6"
-            width="128"
-            height="150"
-            rx="14"
-            fill="#000000"
-            opacity="0.05"
-          />
-          {/* Fondo de tableta / formulario */}
-          <rect
-            x="0"
-            y="0"
-            width="128"
-            height="150"
-            rx="14"
-            fill="#ffffff"
-            stroke="#0ea5e9"
-            strokeWidth="2.5"
-          />
-          {/* Cabecera celeste */}
-          <rect
-            x="0"
-            y="0"
-            width="128"
-            height="26"
-            rx="14"
-            fill="#38bdf8"
-          />
-          <rect x="0" y="16" width="128" height="10" fill="#38bdf8" />
-          <circle cx="16" cy="13" r="3.5" fill="#ffffff" />
-          <circle cx="28" cy="13" r="3.5" fill="#ffffff" />
-
-          {/* Líneas de campos del formulario */}
-          <rect x="18" y="38" width="55" height="7" rx="3.5" fill="#0284c7" />
-          <rect x="18" y="52" width="92" height="5" rx="2.5" fill="#e2e8f0" />
-          <rect x="18" y="64" width="75" height="5" rx="2.5" fill="#e2e8f0" />
-
-          {/* Cuadro de verificación verde con + */}
-          <rect
-            x="76"
-            y="76"
-            width="34"
-            height="26"
-            rx="6"
-            fill="#e0f2fe"
-            stroke="#0284c7"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M93 83V95M87 89H99"
-            stroke="#0284c7"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-
-          <rect x="18" y="82" width="48" height="5" rx="2.5" fill="#e2e8f0" />
-          <rect x="18" y="94" width="48" height="5" rx="2.5" fill="#e2e8f0" />
-          <rect x="18" y="112" width="92" height="5" rx="2.5" fill="#e2e8f0" />
-          <rect x="18" y="124" width="70" height="5" rx="2.5" fill="#e2e8f0" />
-        </g>
-
-        {/* Estudiante en laptop (derecha) */}
-        <g transform="translate(195, 25)">
-          {/* Cabello */}
-          <path
-            d="M74 44C74 33 65 24 54 24C44 24 37 32 37 42C37 44 38 46 40 46C42 46 43 44 45 43C48 41 53 41 56 43C59 45 61 48 64 48C68 48 74 46 74 44Z"
-            fill="#0f172a"
-          />
-          {/* Cabeza */}
-          <circle cx="56" cy="46" r="13" fill="#ffcca0" />
-          {/* Cuello */}
-          <rect x="52" y="56" width="9" height="10" fill="#ffb880" />
-          {/* Camiseta verde SENA */}
-          <path
-            d="M34 85C34 68 43 64 56 64C69 64 78 68 78 85V115H34V85Z"
-            fill="#008f4c"
-          />
-          {/* Brazo izquierdo hacia laptop */}
-          <path
-            d="M38 74L25 96L46 102"
-            stroke="#ffcca0"
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* Laptop abierta */}
-          <g transform="translate(10, 88)">
-            {/* Pantalla laptop */}
-            <polygon
-              points="15,0 45,0 42,26 12,26"
-              fill="#003847"
-              stroke="#001f28"
-              strokeWidth="1.5"
-            />
-            {/* Base teclado laptop */}
-            <polygon
-              points="6,26 48,26 44,34 2,34"
-              fill="#00242e"
-            />
-            {/* Logo en laptop */}
-            <circle cx="28" cy="13" r="3" fill="#008f4c" />
-          </g>
-        </g>
-      </svg>
+    <div className="relative w-full h-44 sm:h-48 flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-[#e8f7f3] via-[#f0fbf7] to-white">
+      {/* Ruido de fondo sutil */}
+      <div className="absolute inset-0 pointer-events-none opacity-40 mix-blend-multiply" aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/login-images/bg-noise-login.png" alt="" className="w-full h-full object-cover" />
+      </div>
+      {/* Ilustración */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/admin-images/crear-nuevo-formulario-ilustracion.png"
+        alt="Ilustración crear formulario"
+        className="relative z-10 w-full h-full object-contain drop-shadow-md"
+      />
     </div>
   );
 }
-
 /* ──────────────────────────────────────────────────────────────────────────
    COMPONENTE PRINCIPAL: GESTIÓN DE FORMULARIOS ADMIN (MOCKUP EXACTO)
 ────────────────────────────────────────────────────────────────────────── */
