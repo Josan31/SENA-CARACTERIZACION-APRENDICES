@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ArrowRight,
-  BarChart2,
-  FileText,
-  Home,
-  Settings,
-} from "lucide-react";
+import { Icon } from "@iconify/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,20 +11,20 @@ const NAV_SECTIONS = [
   {
     heading: "Menú principal",
     items: [
-      { href: "/admin", label: "Inicio", icon: Home },
+      { href: "/admin", label: "Inicio", icon: "lucide:home" },
     ],
   },
   {
     heading: "Caracterización",
     items: [
-      { href: "/admin/formularios", label: "Formularios", icon: FileText },
-      { href: "/admin/resultados", label: "Resultados", icon: BarChart2 },
+      { href: "/admin/formularios", label: "Formularios", icon: "lucide:file-text" },
+      { href: "/admin/resultados", label: "Resultados", icon: "lucide:bar-chart-2" },
     ],
   },
   {
     heading: "Gestión",
     items: [
-      { href: "/admin/administracion", label: "Administración", icon: Settings },
+      { href: "/admin/administracion", label: "Administración", icon: "lucide:settings" },
     ],
   },
 ] as const;
@@ -53,10 +47,11 @@ export default function Sidebar() {
     <aside
       className={`
         relative flex h-full shrink-0 flex-col justify-between overflow-hidden
-        bg-gradient-to-br from-sena-green to-emerald-600 text-white font-primary shadow-2xl select-none
+        text-white font-primary shadow-2xl select-none
         transition-[width] duration-300 ease-in-out
         ${collapsed ? "w-[72px]" : "w-60"}
       `}
+      style={{ backgroundColor: "#095f35" }}
     >
       {/* ── Brand Header ── */}
       <div>
@@ -116,7 +111,6 @@ export default function Sidebar() {
 
               <div className="space-y-1">
                 {section.items.map((item) => {
-                  const Icon = item.icon;
                   const active = isActive(item.href);
 
                   return (
@@ -135,8 +129,9 @@ export default function Sidebar() {
                       `}
                     >
                       <Icon
-                        size={18}
-                        strokeWidth={active ? 2.5 : 2}
+                        icon={item.icon}
+                        width="18"
+                        height="18"
                         className={
                           active
                             ? "text-emerald-600 shrink-0"
@@ -196,7 +191,8 @@ export default function Sidebar() {
               aria-label="Ver perfil"
             >
               <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sena-green to-emerald-600 text-white text-xs font-black shadow-sm"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white text-xs font-black shadow-sm"
+                style={{ backgroundColor: "#095f35" }}
               >
                 {initials}
               </div>
@@ -211,7 +207,8 @@ export default function Sidebar() {
               <div className="flex items-center gap-2.5 min-w-0">
                 <div
                   aria-hidden="true"
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sena-green to-emerald-600 text-white text-xs font-black shadow-sm"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white text-xs font-black shadow-sm"
+                  style={{ backgroundColor: "#095f35" }}
                 >
                   {initials}
                 </div>
@@ -224,8 +221,10 @@ export default function Sidebar() {
                   </p>
                 </div>
               </div>
-              <ArrowRight
-                size={14}
+              <Icon
+                icon="lucide:arrow-right"
+                width="14"
+                height="14"
                 className="text-emerald-600/50 group-hover:text-emerald-700 group-hover:translate-x-0.5 transition-all shrink-0 ml-1"
               />
             </Link>

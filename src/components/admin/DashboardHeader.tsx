@@ -2,6 +2,7 @@
 
 import {
   Bell,
+  CalendarDays,
   ChevronDown,
   GraduationCap,
   LogOut,
@@ -177,8 +178,26 @@ function ProfileModal({
 }
 
 /* ─────────────────────────────────────────────────────────
-   Main Header Component
+   Date tag helper
 ───────────────────────────────────────────────────────── */
+function FormattedDate() {
+  const now = new Date();
+  const label = now.toLocaleDateString("es-CO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  // Capitalize first letter
+  const display = label.charAt(0).toUpperCase() + label.slice(1);
+  return (
+    <div className="hidden md:flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3.5 py-2 shadow-sm select-none">
+      <CalendarDays size={15} className="shrink-0 text-sena-green" strokeWidth={2} />
+      <span className="text-xs font-semibold text-sena-navy whitespace-nowrap">{display}</span>
+    </div>
+  );
+}
+
+
 export default function DashboardHeader() {
   const [profileOpen, setProfileOpen] = useState(false);
   const { collapsed, toggle: toggleSidebar } = useSidebar();
@@ -224,51 +243,9 @@ export default function DashboardHeader() {
 
           {/* ── Right: Controls + User ── */}
           <div className="flex items-center gap-4 shrink-0">
-            {/* Quick Actions */}
-            <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger
-                  type="button"
-                  id="btn-notifications"
-                  aria-label="Notificaciones"
-                  className="relative cursor-pointer flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-all hover:border-sena-green hover:bg-sena-light hover:text-sena-green shadow-xs"
-                >
-                  <Bell size={18} />
-                  <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-sena-green ring-2 ring-white" />
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-sena-navy text-white text-xs font-medium">
-                  Notificaciones
-                </TooltipContent>
-              </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger
-                  type="button"
-                  id="btn-security"
-                  aria-label="Seguridad"
-                  className="relative cursor-pointer flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-all hover:border-sena-green hover:bg-sena-light hover:text-sena-green shadow-xs"
-                >
-                  <ShieldCheck size={18} />
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-sena-navy text-white text-xs font-medium">
-                  Seguridad
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger
-                  type="button"
-                  id="btn-settings"
-                  aria-label="Configuración"
-                  className="relative cursor-pointer flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-all hover:border-sena-green hover:bg-sena-light hover:text-sena-green shadow-xs"
-                >
-                  <Settings size={18} />
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-sena-navy text-white text-xs font-medium">
-                  Configuración
-                </TooltipContent>
-              </Tooltip>
-            </div>
+            {/* Date tag */}
+            <FormattedDate />
 
             <div className="h-8 w-px bg-gray-200" />
 
