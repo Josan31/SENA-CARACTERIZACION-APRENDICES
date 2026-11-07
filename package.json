@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "backend:dev": "npm --prefix backend run start:dev",
+    "db:status": "npm --prefix backend run db:status",
+    "db:migrate": "npm --prefix backend run db:migrate",
+    "db:generate": "npm --prefix backend run db:generate",
+    "db:studio": "npm --prefix backend run db:studio"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
