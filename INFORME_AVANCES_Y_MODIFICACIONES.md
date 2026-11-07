@@ -1,135 +1,85 @@
 # INFORME TÉCNICO DE MODIFICACIONES, NUEVAS IMPLEMENTACIONES Y AVANCES
 ## SISTEMA INSTITUCIONAL DE CARACTERIZACIÓN DE APRENDICES — SENA
-**Fecha:** 14 de Octubre de 2026  
-**Versión del Software:** 2.0.0 (Release Oficial de Formularios)  
+**Fecha de Actualización:** 7 de Noviembre de 2026  
+**Versión del Software:** 2.5.0 (Release Fullstack Transaccional & Gestión de Cuentas)  
 **Proyecto:** `SENA-CARACTERIZACION-APRENDICES`  
-**Entorno Tecnológico:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Lucide Icons, Prisma / PostgreSQL  
+**Entorno Tecnológico:** Next.js 16 (App Router), React 19, Tailwind CSS v4, NestJS 10, Prisma ORM 6, PostgreSQL 16 (Docker)  
 
 ---
 
-## 1. Resumen Ejecutivo
+## 1. Resumen Ejecutivo de la Versión 2.5.0
 
-El presente informe detalla exhaustivamente todos los archivos **creados**, **modificados** y **renombrados** de acuerdo con los avances y requerimientos solicitados para el aplicativo web institucional de Caracterización de Aprendices SENA.
+El presente informe consolida los avances técnicos correspondientes a la integración de la arquitectura fullstack del aplicativo, conectando los componentes visuales de Next.js con una API RESTful empresarial en NestJS y la base de datos relacional PostgreSQL.
 
-Los principales hitos completados abarcan:
-1. **Autenticación Limpia y Diferenciada por Roles**: Credenciales exclusivas para Administrador (`admin` / `12345`) y Aprendiz (`aprendiz` / `123456`), eliminando recargas cíclicas y cajas de prueba.
-2. **Portal del Aprendiz (`/aprendiz`)**:
-   - Pantalla de inicio con el **Consentimiento Informado** idéntica al mockup original (4 cláusulas legales, ilustración oficial de protección de datos, aceptación y botón Continuar).
-   - Dashboard de **6 Tarjetas de Caracterización** (`/aprendiz/formularios`) fiel al diseño del mockup (barra de recaracterización al 65%, ilustraciones SVG a medida, cintas diagonales de colores institucionales y apertura interactiva de módulos).
-   - Pantalla de **Resultados y Radicado** (`/aprendiz/resultados`) con folio oficial, vigencia de 6 meses y descarga de comprobante en PDF.
-   - Barra lateral institucional del aprendiz con navegación completa, cintas SENA y cápsula de perfil.
-3. **Portal del Administrador (`/admin`)**:
-   - Pantalla de **Gestión de Formularios** (`/admin/formularios`) idéntica al mockup administrativo de 2 columnas (4 tarjetas de módulos con botones `[ ✏️ Editar → ]` e ilustración lateral de estudiante con portapapeles digital para "Crear Nuevo Formulario").
-   - Barra lateral institucional del administrador actualizada con las cintas institucionales, perfil y botones de cierre de sesión.
-   - Enrutamiento dinámico centralizado en `/admin/formularios` mediante parámetros (`?form=basica`, `salud`, `socioeconomica`, `formativo`, etc.) eliminando subcarpetas innecesarias para una estructura de archivos limpia y plana.
-4. **Desacoplamiento y Nombres Semánticos de Formularios**:
-   - Nombres de archivos normalizados y descriptivos en `src/components/formularios/`.
-   - Limpieza de datos quemados: todos los campos inician vacíos (`""`), con persistencia estructurada en `localStorage` y confirmación visual inmediata.
-5. **Cero Errores de Tipado**:
-   - Validación estricta con `npx tsc --noEmit` completada con código de salida **0** (cero errores en todo el proyecto).
-
----
-
-## 2. Matriz Maestra de Archivos Creados, Modificados y Renombrados
-
-A continuación se relacionan todos los archivos intervenidos, especificando su nombre, ruta, estado, módulo al que pertenecen y el avance técnico efectuado:
-
-| Nombre del Archivo | Ruta Relativa | Estado | Módulo / Rol | Descripción del Avance Técnico |
-| :--- | :--- | :---: | :---: | :--- |
-| `INFORME_AVANCES_Y_MODIFICACIONES.md` | `/INFORME_AVANCES_Y_MODIFICACIONES.md` | **Creado** | General | Documento técnico integral de auditoría de cambios y entregables. |
-| `users.ts` | `src/lib/users.ts` | **Creado** | Seguridad / Auth | Base central de autenticación con credenciales oficiales (`admin`/`12345` y `aprendiz`/`123456`) y nombres oficiales. |
-| `page.tsx` (Login) | `src/app/(auth)/login/page.tsx` | **Modificado** | Autenticación | Eliminación del cuadro predeterminado, corrección del bucle de recarga con redirección inmediata por rol y botón de autocompletado. |
-| `layout.tsx` (Aprendiz) | `src/app/aprendiz/layout.tsx` | **Modificado** | Portal Aprendiz | Contenedor principal con fondo menta pastel (`#edf5f7`) y soporte integrado para la barra lateral institucional. |
-| `SidebarAprendiz.tsx` | `src/components/aprendiz/SidebarAprendiz.tsx` | **Creado** | Portal Aprendiz | Barra lateral institucional verde SENA (`#004e26`) con logotipo blanco, lema *"Más personas más oportunidades"*, cintas institucionales y perfil. |
-| `page.tsx` (Inicio Aprendiz) | `src/app/aprendiz/page.tsx` | **Creado** | Portal Aprendiz | Vista idéntica al mockup del Consentimiento Informado con 4 aspectos legales, ilustración institucional y activación obligatoria de casilla. |
-| `consent-illustration.jpg` | `public/admin-images/consent-illustration.jpg` | **Creado** | Multimedia | Ilustración institucional de alta definición de la aprendiz resguardada por el escudo de protección de datos. |
-| `page.tsx` (Formularios Aprendiz) | `src/app/aprendiz/formularios/page.tsx` | **Modificado** | Portal Aprendiz | Réplica exacta del mockup de 6 tarjetas con ilustraciones vectoriales SVG, barra de recaracterización (65%), botón de retorno circular y apertura de encuestas. |
-| `page.tsx` (Resultados Aprendiz) | `src/app/aprendiz/resultados/page.tsx` | **Creado** | Portal Aprendiz | Vista de certificación oficial de radicación (100% completado), folio criptográfico y botón de descarga de comprobante en PDF. |
-| `Sidebar.tsx` (Admin) | `src/components/admin/Sidebar.tsx` | **Modificado** | Portal Admin | Barra lateral de administración actualizada con el diseño institucional exacto del mockup (verde SENA, cintas diagonales y cápsula de perfil). |
-| `layout.tsx` (Admin) | `src/app/admin/layout.tsx` | **Modificado** | Portal Admin | Layout del panel administrativo con fondo suave institucional `#edf5f7` y navegación fluida. |
-| `page.tsx` (Admin Formularios) | `src/app/admin/formularios/page.tsx` | **Modificado** | Portal Admin | Réplica exacta del mockup de Gestión de Formularios (4 tarjetas de módulos a la izquierda con botón `Editar` + panel derecho "Crear Nuevo Formulario" con ilustración). |
-| `DashboardHeader.tsx` | `src/components/admin/DashboardHeader.tsx` | **Modificado** | Portal Admin | Encabezado administrativo configurado para Carlos Alberto Restrepo (Coordinador de Bienestar al Aprendiz). |
-| `page.tsx` (Admin Inicio) | `src/app/admin/page.tsx` | **Modificado** | Portal Admin | Panel principal con métricas globales de caracterización para el coordinador. |
-| `FormularioBasica.tsx` | `src/components/formularios/FormularioBasica.tsx` | **Creado** | Formularios | Módulo 1: Identificación personal, emergencia, estrato y residencia. Campos limpios y guardado en `localStorage`. |
-| `FormularioSalud.tsx` | `src/components/formularios/FormularioSalud.tsx` | **Creado** | Formularios | Módulo 2: EPS, régimen de salud, condición física, discapacidad y salud sexual/reproductiva. |
-| `FormularioSocioeconomica.tsx` | `src/components/formularios/FormularioSocioeconomica.tsx` | **Creado** | Formularios | Módulo 3: Jefatura de hogar, composición familiar, rango de ingresos y apoyos estatales. |
-| `FormularioFormativo.tsx` | `src/components/formularios/FormularioFormativo.tsx` | **Creado** | Formularios | Módulo 4: Nivel educativo previo, motivación, proyección y esquema de vacunación biológica. |
-| `FormularioConfirmacionEnvio.tsx` | `src/components/formularios/FormularioConfirmacionEnvio.tsx` | **Renombrado / Creado** | Formularios | Paso 10: Revisión consolidada de los 4 módulos, declaración jurada de veracidad y radicación. *(Nombre anterior: Formulario10Confirmacion)* |
-| `Formulario10Confirmacion.tsx` | `src/components/formularios/Formulario10Confirmacion.tsx` | **Modificado** | Formularios | Reexportador de compatibilidad hacia `FormularioConfirmacionEnvio`. |
-| `FormularioComprobanteRadicado.tsx` | `src/components/formularios/FormularioComprobanteRadicado.tsx` | **Renombrado / Creado** | Formularios | Comprobante oficial de radicación (100% completado), folio institucional y descarga en PDF. *(Nombre anterior: Formulario10Finalizado)* |
-| `Formulario10Finalizado.tsx` | `src/components/formularios/Formulario10Finalizado.tsx` | **Modificado** | Formularios | Reexportador de compatibilidad hacia `FormularioComprobanteRadicado`. |
-| `FormularioConsentimiento.tsx` | `src/components/formularios/FormularioConsentimiento.tsx` | **Creado** | Formularios | Instrumento legal independiente de consentimiento y tratamiento de datos personales (Ley 1581 de 2012). |
-| `FormularioRecaracterizacion.tsx` | `src/components/formularios/FormularioRecaracterizacion.tsx` | **Creado** | Formularios | Instrumento semestral ágil para actualizar cambios de residencia, salud e ingresos. |
-| `FormularioAsesoriaDirecta.tsx` | `src/components/formularios/FormularioAsesoriaDirecta.tsx` | **Creado** | Formularios | Solicitud confidencial de asesoría psicológica, socioeconómica o de enfermería ante Bienestar al Aprendiz. |
-| `FormularioWizardCompleto.tsx` | `src/components/formularios/FormularioWizardCompleto.tsx` | **Creado** | Formularios | Asistente integral guiado de 10 pasos con barra de progreso interactiva. |
-| `types.ts` | `src/components/formularios/types.ts` | **Creado** | Tipado | Interfaces de TypeScript para cada módulo de la base de datos (Prisma/PostgreSQL). |
-| `formularios.ts` | `src/types/formularios.ts` | **Creado** | Tipado | Definiciones globales de estado y respuestas de caracterización. |
-| `page.tsx` (Gestión Centralizada) | `src/app/admin/formularios/page.tsx` | **Modificado** | Rutas Admin | Gestión completa de formularios unificada en un solo archivo plano sin subcarpetas, con soporte de parámetros dinámicos (`?form=...`). |
+### Hitos Técnicos Consolidados:
+1. **Autenticación Dual Unificada y Seguridad JWT (`/api/v1/auth/login`)**:
+   - Soporte diferenciado para **Aprendices** (búsqueda por número de documento o correo, validación cruzada obligatoria del tipo de documento seleccionado vs. registrado en BD) y **Personal SENA / Funcionarios** (búsqueda en tabla `usuarios` y validación con hash `bcrypt`).
+   - Tokens de acceso Bearer JWT firmados con payload institucional (roles: `admin`, `lider_bienestar`, `coordinacion`, `direccion_regional`, `calidad`, `aprendiz`).
+   - Bloqueo en tiempo real de cuentas inactivas (`401 Unauthorized: Cuenta inactiva o deshabilitada`).
+   - Endpoint de perfil institucional autenticado: `GET /api/v1/auth/perfil`.
+2. **Módulo de Catálogos Oficiales Normalizados (`/api/v1/catalogos`)**:
+   - Endpoints dinámicos para consulta de opciones institucionales (`ciudades`, `estratos`, `eps`, `regímenes`, `grupos SISBÉN`, etc.) vinculados a llaves foráneas en PostgreSQL.
+3. **Módulo Transaccional de Caracterizaciones ACID (`/api/v1/caracterizaciones`)**:
+   - Guardado de la encuesta completa en una **única transacción atómica** que puebla de manera consistente la tabla principal `caracterizaciones` y sus **14 tablas satélite** relacionales (`aprendiz_basica`, `aprendiz_localizacion`, `aprendiz_salud`, `aprendiz_socioeconomica`, `aprendiz_formativa`, `vacunacion_covid`, etc.).
+   - Validación estricta de catálogos en backend (reglas R1-R7): si una opción no coincide con los catálogos de base de datos, la transacción se cancela (Rollback automático) y retorna `422 Unprocessable Entity`.
+   - Generación de radicado oficial con expresión regular estricta:
+     $$\text{^RAD-SENA-[0-9]\{4\}-[0-9]\{6\}\$}$$
+   - Endpoint activo del estudiante: `GET /api/v1/caracterizaciones/mi-caracterizacion`.
+4. **Capa de Rendimiento y Sincronización Frontend (SWR Cache)**:
+   - Implementación de `cacheCaracterizacion.ts`: caché en memoria con invalidación reactiva que elimina por completo el parpadeo de pantalla y la espera de 2 segundos al recargar o navegar entre módulos.
+   - Cálculo en vivo del porcentaje de avance diligenciado por formulario según respuestas válidas en PostgreSQL.
+5. **Módulo de Usuarios y Gestión de Cuentas (`/api/v1/usuarios`)**:
+   - CRUD completo de funcionarios para administradores: `GET /usuarios`, `GET :id`, `POST /usuarios`, `PUT :id`, `PATCH :id/toggle-activo`, `DELETE :id`.
+   - Encriptación automática de contraseñas con `bcrypt` (10 rounds de sal).
+   - Control de unicidad de correo electrónico institucional (`409 Conflict`).
+   - Registro de accesos y modificaciones en la tabla `auditoria_accesos`.
+   - Protecciones de seguridad institucionales: restricción contra auto-desactivación y auto-eliminación para el administrador que se encuentra en sesión activa (`400 Bad Request`).
+   - Interfaz conectada en tiempo real en [`/admin/administracion`](http://localhost:3001/admin/administracion) con filtros, selector de roles institucionales y confirmación en 2 pasos.
+6. **Suites de Pruebas Automatizadas de Extremo a Extremo (E2E)**:
+   - `npm run test:caracterizaciones`: 8 pruebas que certifican login, guardado ACID, radicado oficial, rollback por error 422, bloqueo RBAC y consulta satélite.
+   - `npm run test:usuarios`: 14 pruebas que certifican CRUD, login con usuario nuevo, bloqueo de cuentas inactivas, reactivación, borrado y auto-protección.
+   - **Tasa de éxito:** 100% (22/22 pruebas pasadas satisfactoriamente).
 
 ---
 
-## 3. Detalle de Avances por Módulo
+## 2. Matriz Maestra de Archivos del Proyecto
 
-### 3.1. Autenticación y Control de Acceso
-- **Credenciales Limpias**:
-  - **Administrador**: Documento `admin` / Contraseña `12345` -> Accede a `/admin` y visualiza la gestión del Coordinador Carlos Restrepo.
-  - **Aprendiz**: Documento `aprendiz` / Contraseña `123456` -> Accede a `/aprendiz` como Valentina Gómez Mejía (Ficha 234567).
-- **Resolución de Bugs**: Se eliminaron los bucles de recarga en el formulario de inicio de sesión mediante navegación directa en el cliente (`window.location.href`) y sincronización inmediata de sesión en `localStorage`.
-
-### 3.2. Portal del Aprendiz (`/aprendiz`)
-- **Pantalla de Inicio (Consentimiento Informado)**:
-  - Réplica exacta de la primera imagen de referencia.
-  - 4 pilares explicativos en contenedor celeste: *¿Qué información se solicita?*, *¿Para qué se usa?*, *¿Cómo se protege?* y *¿Tienes la libertad de participar?*.
-  - Ilustración oficial generada e integrada en `public/admin-images/consent-illustration.jpg`.
-  - Casilla de verificación obligatoria que habilita el botón `CONTINUAR` hacia `/aprendiz/formularios`.
-- **Pantalla de Formularios (Dashboard de 6 Tarjetas)**:
-  - Réplica exacta de la segunda imagen de referencia.
-  - Botón circular de retorno (`←`) y logotipo SENA con línea verde inferior.
-  - Saludo a Valentina y texto de ficha 234567.
-  - Barra de alerta: `⚠️ RECARACTERIZACIÓN REQUERIDA EN 3 MESES` (`Saber más`) con progreso en verde del `65% Completado`.
-  - 6 tarjetas con cintas diagonales de colores (`#39b54a`, `#7b2cbf`, `#fdc300`, `#00304d`) e ilustraciones vectoriales SVG exclusivas:
-    1. *Información Básica y Localización* (`✔ Completado`)
-    2. *Salud y Condición Física* (`✔ Completado`)
-    3. *Salud Sexual y Reproductiva* (`⭕ Pendiente` · 🔒 · *⚠️ Datos confidenciales*)
-    4. *Situación Socioeconómica* (`✔ Completado`)
-    5. *Perfil Formativo y Vacunación COVID-19* (`✔ Completado`)
-    6. *Reportes y Asesoría Directa* (`🟢 Disponible` · Botón `[ 📄 Generar Reporte Personal > ]`)
-  - Apertura interactiva de cada formulario al hacer clic sobre su respectiva tarjeta.
-- **Barra Lateral (`SidebarAprendiz`)**:
-  - Se restauró la barra lateral institucional verde (`#004e26`) con el lema *"Más personas más oportunidades"*, cintas institucionales, perfil y cierre de sesión.
-
-### 3.3. Portal del Administrador (`/admin`)
-- **Pantalla de Gestión de Formularios (`/admin/formularios`)**:
-  - Réplica exacta de la tercera imagen de referencia en 2 columnas:
-    - **Columna Izquierda (4 Módulos)**: Tarjetas apiladas con esquina verde institucional, ilustraciones vectoriales SVG, títulos en azul marino, subtítulos explicativos en azul y botones verdes `[ ✏️ Editar → ]`.
-    - **Columna Derecha (Crear Nuevo Formulario)**: Tarjeta con ilustración de estudiante con portapapeles digital, título con icono verde `+`, campo para ingresar el nombre del formulario y botón verde institucional `[ ✈️ Aceptar → ]`.
-  - Modo edición activo: al pulsar `Editar`, el administrador puede modificar y previsualizar cualquier formulario sin abandonar la vista central.
-- **Barra Lateral del Administrador (`Sidebar`)**:
-  - Actualizada con la misma estética institucional SENA que en el diseño de referencia.
-
-### 3.4. Componentes de Formularios Desacoplados y Nombres Semánticos
-- **Estructura Plana en `src/components/formularios/`**: Sin subcarpetas anidadas para evitar complejidad innecesaria.
-- **Normalización de Nombres**:
-  - Se crearon `FormularioConfirmacionEnvio.tsx` y `FormularioComprobanteRadicado.tsx` con nombres que describen con exactitud su función en el flujo de negocio, preservando reexportadores para no alterar importaciones existentes.
-- **Limpieza de Datos**: Todos los campos inician en blanco (`""`). No hay datos ficticios prellenados.
-- **Persistencia en LocalStorage**: Cada formulario almacena sus valores en claves únicas con prefijo `sena_caracterizacion_modulo_*`, con marca de tiempo ISO y confirmación visual de guardado.
+| Archivo / Componente | Ruta Relativa | Capa | Descripción Técnica |
+| :--- | :--- | :---: | :--- |
+| `main.ts` | `backend/src/main.ts` | Backend | Configuración de prefijo `/api/v1`, CORS global y Swagger OpenAPI. |
+| `auth.service.ts` | `backend/src/modules/auth/auth.service.ts` | Backend | Autenticación dual, verificación bcrypt, validación cruzada TI/CC y bloqueo inactivo. |
+| `caracterizaciones.service.ts` | `backend/src/modules/caracterizaciones/caracterizaciones.service.ts` | Backend | Motor de transacción ACID en 14 tablas, validación de catálogos y radicado oficial. |
+| `usuarios.service.ts` | `backend/src/modules/usuarios/usuarios.service.ts` | Backend | CRUD de funcionarios, bcrypt, control de correo único y auditoría en BD. |
+| `usuarios.controller.ts` | `backend/src/modules/usuarios/usuarios.controller.ts` | Backend | Controlador RESTful con guards `JwtAuthGuard` y `RolesGuard`. |
+| `test-caracterizaciones.mjs` | `scripts/test-caracterizaciones.mjs` | Testing | Suite E2E para el módulo de Caracterizaciones Transaccionales. |
+| `test-usuarios.mjs` | `scripts/test-usuarios.mjs` | Testing | Suite E2E para el módulo de Gestión de Usuarios y Roles. |
+| `api-client.ts` | `src/lib/api-client.ts` | Frontend | Cliente HTTP tipado con inyección de JWT, manejo de errores 401 y parseo de respuestas. |
+| `cacheCaracterizacion.ts` | `src/lib/cacheCaracterizacion.ts` | Frontend | Capa de precarga SWR que elimina tiempos de espera y parpadeos en formularios. |
+| `usuarios.ts` | `src/lib/usuarios.ts` | Frontend | Cliente API tipado para el módulo de usuarios y catálogo de roles. |
+| `page.tsx` (Administración) | `src/app/admin/administracion/page.tsx` | Frontend | Panel administrativo interactivo para gestionar cuentas directamente en PostgreSQL. |
+| `page.tsx` (Resultados Aprendiz)| `src/app/aprendiz/resultados/page.tsx` | Frontend | Vista con radicado oficial emitido por la base de datos y vigencia semestral. |
+| `page.tsx` (Perfil Aprendiz) | `src/app/aprendiz/perfil/page.tsx` | Frontend | Vista del perfil del estudiante con datos sincronizados en tiempo real. |
+| `page.tsx` (Formularios) | `src/app/aprendiz/formularios/page.tsx` | Frontend | Tablero de formularios con cálculo dinámico de progreso por módulo. |
 
 ---
 
-## 4. Guía de Verificación y Pruebas del Sistema
+## 3. Guía de Ejecución y Validación
 
-| Prueba | Ruta | Resultado Esperado | Estado |
-| :--- | :--- | :--- | :---: |
-| **Inicio de Sesión Admin** | `/login` (`admin` / `12345`) | Redirige a `/admin` con perfil de Carlos Restrepo | **Aprobado** |
-| **Inicio de Sesión Aprendiz** | `/login` (`aprendiz` / `123456`) | Redirige a `/aprendiz` (Consentimiento) | **Aprobado** |
-| **Consentimiento Informado** | `/aprendiz` | Casilla obligatoria y botón `CONTINUAR` | **Aprobado** |
-| **Dashboard Aprendiz** | `/aprendiz/formularios` | 6 tarjetas idénticas al mockup con barra al 65% | **Aprobado** |
-| **Resultados Aprendiz** | `/aprendiz/resultados` | Radicado oficial y comprobante descargable en PDF | **Aprobado** |
-| **Gestión Admin** | `/admin/formularios` | 4 tarjetas con `Editar` + Crear nuevo formulario | **Aprobado** |
-| **Compilación TypeScript** | Terminal (`npx tsc --noEmit`) | Salida código 0 (cero errores) | **Aprobado** |
+```bash
+# 1. Ejecutar pruebas automatizadas de caracterización
+npm run test:caracterizaciones
+
+# 2. Ejecutar pruebas automatizadas de usuarios y roles
+npm run test:usuarios
+
+# 3. Compilación de producción frontend
+npm run build
+```
 
 ---
 
-## 5. Conclusión
+## 4. Estado de los Paneles Administrativos
 
-El proyecto cuenta ahora con una arquitectura de carpetas y nombres de archivos perfectamente alineada con los avances y diseños institucionales del SENA. Los flujos de **Aprendiz** y **Administrador** están claramente delimitados y visualmente idénticos a los mockups suministrados, listos para la integración con base de datos en producción.
+1. **Gestión de Cuentas (`/admin/administracion`)**: 100% Conectado y operativo con la base de datos real.
+2. **Dashboard de Métricas (`/admin`)**: Listo para recibir el módulo de reportes consolidados (`ReportesModule`).
+3. **Resultados de Fichas (`/admin/resultados`)**: Listo para conectar con el módulo de fichas formativas (`FichasModule`).
