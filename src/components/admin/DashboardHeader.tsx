@@ -2,6 +2,7 @@
 
 import {
   Bell,
+  CalendarDays,
   ChevronDown,
   GraduationCap,
   LogOut,
@@ -46,6 +47,7 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { useCurrentUser, getInitials } from "@/hooks/useCurrentUser";
 import { clearSession } from "@/lib/auth";
+import { useSidebar } from "./SidebarContext";
 
 /* ─────────────────────────────────────────────────────────
    Helpers
@@ -177,11 +179,29 @@ function ProfileModal({
 }
 
 /* ─────────────────────────────────────────────────────────
-   Main Header Component
+   Date tag helper
 ───────────────────────────────────────────────────────── */
+function FormattedDate() {
+  const now = new Date();
+  const label = now.toLocaleDateString("es-CO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  // Capitalize first letter
+  const display = label.charAt(0).toUpperCase() + label.slice(1);
+  return (
+    <div className="hidden md:flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3.5 py-2 shadow-sm select-none">
+      <CalendarDays size={15} className="shrink-0 text-sena-green" strokeWidth={2} />
+      <span className="text-xs font-semibold text-sena-navy whitespace-nowrap">{display}</span>
+    </div>
+  );
+}
+
+
 export default function DashboardHeader() {
   const [profileOpen, setProfileOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { collapsed, toggle: toggleSidebar } = useSidebar();
 
   const user = useCurrentUser();
   const nombre  = user?.nombre  ?? "Usuario SENA";
@@ -200,14 +220,14 @@ export default function DashboardHeader() {
           <div className="flex items-center gap-3 flex-1 max-w-md">
             <button
               type="button"
-              onClick={() => setSidebarOpen((v) => !v)}
-              aria-label={sidebarOpen ? "Cerrar panel lateral" : "Abrir panel lateral"}
+              onClick={toggleSidebar}
+              aria-label={collapsed ? "Abrir panel lateral" : "Cerrar panel lateral"}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-all hover:border-sena-green hover:bg-sena-green hover:text-white active:scale-95"
             >
               <PanelLeftClose
                 size={18}
                 strokeWidth={2}
-                className={`transition-transform duration-300 ${sidebarOpen ? "" : "rotate-180"}`}
+                className={`transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`}
               />
             </button>
 
@@ -224,51 +244,9 @@ export default function DashboardHeader() {
 
           {/* ── Right: Controls + User ── */}
           <div className="flex items-center gap-4 shrink-0">
-            {/* Quick Actions */}
-            <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger
-                  type="button"
-                  id="btn-notifications"
-                  aria-label="Notificaciones"
-                  className="relative cursor-pointer flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-all hover:border-sena-green hover:bg-sena-light hover:text-sena-green shadow-xs"
-                >
-                  <Bell size={18} />
-                  <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-sena-green ring-2 ring-white" />
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-sena-navy text-white text-xs font-medium">
-                  Notificaciones
-                </TooltipContent>
-              </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger
-                  type="button"
-                  id="btn-security"
-                  aria-label="Seguridad"
-                  className="relative cursor-pointer flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-all hover:border-sena-green hover:bg-sena-light hover:text-sena-green shadow-xs"
-                >
-                  <ShieldCheck size={18} />
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-sena-navy text-white text-xs font-medium">
-                  Seguridad
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger
-                  type="button"
-                  id="btn-settings"
-                  aria-label="Configuración"
-                  className="relative cursor-pointer flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-all hover:border-sena-green hover:bg-sena-light hover:text-sena-green shadow-xs"
-                >
-                  <Settings size={18} />
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-sena-navy text-white text-xs font-medium">
-                  Configuración
-                </TooltipContent>
-              </Tooltip>
-            </div>
+            {/* Date tag */}
+            <FormattedDate />
 
             <div className="h-8 w-px bg-gray-200" />
 
@@ -323,14 +301,6 @@ export default function DashboardHeader() {
                     <User size={16} className="text-sena-green" />
                     <span>Ver Perfil</span>
                   </DropdownMenuItem>
-
-                  <DropdownMenuItem
-                    id="menu-configuracion"
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-sena-navy cursor-pointer transition-colors"
-                  >
-                    <Settings size={16} className="text-gray-400" />
-                    <span>Configuración</span>
-                  </DropdownMenuItem>
                 </DropdownMenuGroup>
 
                 <DropdownMenuSeparator className="bg-gray-100 my-1" />
@@ -384,3 +354,4 @@ export default function DashboardHeader() {
     </>
   );
 }
+
