@@ -1,147 +1,329 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import {
-  ArrowRight,
-  RefreshCw,
+  ChevronLeft,
   Sparkles,
-  ClipboardList,
-  AlertCircle,
-  Loader2,
+  HeartPulse,
+  Syringe,
+  TrendingUp,
+  FileText,
+  CheckCircle2,
+  ShieldCheck,
+  Activity,
+  Check,
+  Clock,
+  Shield,
+  BarChart3,
+  Thermometer
 } from "lucide-react";
-import Formulario10Finalizado from "@/components/formularios/Formulario10Finalizado";
-import { obtenerMiCaracterizacion, MiCaracterizacionResponse } from "@/lib/caracterizacion";
-import { getUser } from "@/lib/auth";
 
 export default function AprendizResultadosPage() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<MiCaracterizacionResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function cargarResultado() {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await obtenerMiCaracterizacion();
-        setData(res);
-      } catch (err: any) {
-        console.error("Error al obtener caracterización del aprendiz:", err);
-        setError(err.message || "No se pudo cargar la información de caracterización.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    cargarResultado();
-  }, []);
-
-  const user = getUser();
-  const caracterizacion = data?.caracterizacion;
-  const aprendiz = data?.aprendiz;
-
-  const fechaRadicado = caracterizacion
-    ? new Date(caracterizacion.fecha || caracterizacion.createdAt).toLocaleDateString("es-CO", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "";
-
   return (
-    <div className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full font-primary">
-      {/* Botón Circular de Retorno */}
-      <div>
-        <Link
-          href="/aprendiz/formularios"
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#00304d] shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-slate-200 hover:bg-slate-50 transition-all cursor-pointer hover:-translate-x-0.5"
-          title="Volver a Formularios"
-        >
-          <ArrowRight className="rotate-180" size={20} strokeWidth={2.6} />
-        </Link>
-      </div>
+    <main className="min-h-screen w-full bg-[#f1f9fc] px-4 py-6 text-[#173b63] sm:px-6 lg:px-10 font-primary">
+      <div className="mx-auto w-full max-w-[1500px] space-y-6">
 
-      {/* Encabezado */}
-      <header className="rounded-2xl bg-gradient-to-r from-[#00304d] via-[#004e7c] to-[#0077b6] p-6 text-white shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold text-sky-100 backdrop-blur-xs mb-2">
-            <Sparkles size={12} />
-            Certificación Oficial de Caracterización
-          </span>
-          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-            Mis Resultados y Radicado
-          </h1>
-          <p className="text-xs md:text-sm text-sky-100/90 mt-1">
-            Consulta y descarga tu constancia oficial de diligenciamiento requerida por Bienestar al Aprendiz.
-          </p>
-        </div>
-
-        {caracterizacion && (
-          <Link
-            href="/aprendiz/formularios"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-bold text-sena-navy shadow-lg hover:bg-slate-50 transition-all hover:scale-105 shrink-0"
-          >
-            <RefreshCw size={14} />
-            <span>Actualizar Datos</span>
-          </Link>
-        )}
-      </header>
-
-      {/* Contenido Principal */}
-      <main className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-2 sm:p-6">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-4">
-            <Loader2 className="animate-spin text-[#008f4c]" size={36} />
-            <p className="text-sm font-bold text-[#00304d]">
-              Consultando constancia oficial en servidores del SENA...
-            </p>
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-16 space-y-4 text-center">
-            <AlertCircle className="text-rose-500" size={42} />
-            <h3 className="text-lg font-bold text-slate-800">No se pudo cargar la constancia</h3>
-            <p className="text-xs text-slate-500 max-w-md">{error}</p>
+        {/* ==================================================
+            ENCABEZADO DE LA PÁGINA (Estilo directo sin fondo blanco)
+            ================================================== */}
+        <header className="mb-7 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
             <button
-              onClick={() => window.location.reload()}
-              className="mt-2 rounded-full bg-slate-100 px-5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+              type="button"
+              aria-label="Volver"
+              onClick={() => window.history.back()}
+              className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#168c91] shadow-md transition hover:bg-[#e8f8f5] cursor-pointer"
             >
-              Reintentar
+              <ChevronLeft size={25} />
             </button>
-          </div>
-        ) : caracterizacion ? (
-          <Formulario10Finalizado
-            radicado={caracterizacion.radicado || "RAD-SENA-2026-000000"}
-            fechaRadicado={fechaRadicado}
-            nombreAprendiz={aprendiz?.nombreCompleto || user?.nombre || "Aprendiz SENA"}
-            documento={`${aprendiz?.tipoDocumento?.valor || user?.tipoDocumento || "Doc."}: ${aprendiz?.numeroDocumento || user?.numeroDocumento}`}
-            programa={user?.programa || "Análisis y Desarrollo de Software"}
-            ficha={user?.ficha || "2670142"}
-            centro={user?.centro || "Centro de Teleinformática y Producción Industrial - Regional Cauca"}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-5">
-            <div className="h-16 w-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shadow-sm">
-              <ClipboardList size={32} />
-            </div>
-            <div className="max-w-md space-y-2">
-              <h2 className="text-xl font-bold text-[#00304d]">
-                Aún no has completado tu caracterización
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500">
-                Para acceder a los beneficios de Bienestar al Aprendiz y expedir tu certificado oficial, debes completar los 4 módulos de caracterización institucional.
+
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#00304d] tracking-tight">
+                Bienvenido(a), Aprendiz SENA
+              </h1>
+              <p className="mt-1 text-sm text-[#6285a5]">
+                Aqui iria la info del aprendiz y su ficha correspondiente
               </p>
             </div>
-            <Link
-              href="/aprendiz/formularios"
-              className="inline-flex items-center gap-2 rounded-full bg-[#008f4c] hover:bg-[#00763f] text-white px-7 py-3 text-xs font-bold shadow-lg transition-all hover:scale-105"
-            >
-              <span>Comenzar Caracterización Ahora</span>
-              <ArrowRight size={16} />
-            </Link>
           </div>
-        )}
-      </main>
+
+          {/* Identificación institucional SENA */}
+          <div className="hidden shrink-0 text-right sm:block">
+            <p className="text-xl font-black leading-none text-[#08713e]">
+              SENA
+            </p>
+            <p className="mt-1 text-[10px] leading-tight text-[#27634c]">
+              Tecnología
+              <br />
+              e innovación
+              <br />
+              para un mejor país
+            </p>
+            <div className="ml-auto mt-2 h-1 w-12 bg-[#08713e]" />
+          </div>
+        </header>
+
+        {/* Barra de Progreso Superior */}
+        <div className="bg-[#39A900]/10 rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100">
+            <BarChart3 size={16} className="text-emerald-600" />
+            <span>[ DATOS ACTUALIZADOS ]</span>
+          </div>
+          <div className="w-full sm:w-2/3 flex items-center gap-3">
+            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div className="bg-[#00785a] h-full rounded-full w-[65%] transition-all duration-500"></div>
+            </div>
+            <span className="text-xs font-bold text-slate-700 shrink-0">65% Completado</span>
+          </div>
+        </div>
+
+        <h3 className="text-2xl font-extrabold tracking-tight text-[#173b63] sm:text-3xl">
+              Mis Resultados de Bienestar Y Salud
+        </h3>
+        <p className="mt-1 text-sm text-[#6285a5]">
+          Aqui iria la info del aprendiz y su ficha correspondiente
+        </p>
+
+        {/* ==================================================
+            SECCIÓN DE TARJETAS DE RESULTADOS
+            ================================================== */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          {/* Tarjeta 1: Resumen Diagnóstico de Salud */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  Resumen Diagnóstico de Salud (Física)
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center my-2">
+
+                {/* Columna de Iconos a la izquierda + Gráfico Donut */}
+                <div className="flex items-center justify-center gap-3 p-2">
+                  <div className="flex flex-col gap-2.5 shrink-0">
+                    <div className="p-2 rounded-xl  text-[#00785a]">
+                      <HeartPulse size={25} />
+                    </div>
+                    <div className="p-2 rounded-xl text-[#00785a]">
+                      <ShieldCheck size={25} />
+                    </div>
+                    <div className="p-2 rounded-xl  text-[#00785a] ">
+                      <Activity size={25} />
+                    </div>
+                  </div>
+
+                  {/* Gráfico Donut */}
+                  <div className="relative flex items-center justify-center p-2">
+                    <div className="w-40 h-40 rounded-full border-[40px] border-slate-100 border-t-[#0077b6] border-r-emerald-500 border-b-amber-400 flex items-center justify-center shadow-inner">
+                      <div className="text-center">
+                        <HeartPulse className="mx-auto text-[#00785a]" size={30} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Porcentajes y Leyendas */}
+                <div className="space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-slate-600">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                      Condición Óptima
+                    </span>
+                    <span className="font-bold text-slate-700">65%</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-slate-600">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#0077b6] inline-block"></span>
+                      Requiere Seguimiento Menor
+                    </span>
+                    <span className="font-bold text-slate-700">20%</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-slate-600">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
+                      Bajo Monitoreo de Bienestar
+                    </span>
+                    <span className="font-bold text-slate-700">15%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-slate-100 bg-sky-50/60 rounded-xl p-3 flex items-center gap-2 text-xs text-[#00304d]">
+              <ShieldCheck size={16} className="text-[#0077b6] shrink-0" />
+              <span>Tu perfil general está saludable y cumple con los estándares institucionales.</span>
+            </div>
+          </div>
+
+          {/* Tarjeta 2: Esquema de Vacunación e Inmunización */}
+<div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+  <div>
+    <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+        Esquema de Vacunación e Inmunización
+      </h3>
     </div>
+
+    {/* Distribución general en cuadrícula: Izquierda la columna de iconos, Derecha las barras */}
+    <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-center my-2">
+
+      {/* Columna Vertical de Iconos a la Izquierda */}
+      <div className="flex flex-col gap-2.5 shrink-0 justify-center">
+        <div className="p-2 rounded-xl text-[#00785a]">
+          <Syringe size={40} />
+        </div>
+        <div className="p-2 rounded-xl text-[#00785a] ">
+          <ShieldCheck size={40} />
+        </div>
+      </div>
+
+      {/* Bloque con las Barras de Progreso a la Derecha */}
+      <div className="space-y-3.5 text-xs w-full">
+        <div>
+          <div className="flex justify-between font-medium text-slate-700 mb-1">
+            <span>COVID-19 (3 Dosis)</span>
+            <span className="text-emerald-600 font-bold flex items-center gap-1">
+              <CheckCircle2 size={13} /> 100%
+            </span>
+          </div>
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div className="bg-[#00785a] h-full rounded-full w-full"></div>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex justify-between font-medium text-slate-700 mb-1">
+            <span>Tétanos (Dosis Completa)</span>
+            <span className="text-emerald-600 font-bold flex items-center gap-1">
+              <CheckCircle2 size={13} /> 100%
+            </span>
+          </div>
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div className="bg-[#00785a] h-full rounded-full w-full"></div>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex justify-between font-medium text-slate-700 mb-1">
+            <span>Influenza</span>
+            <span className="text-slate-600 font-bold">70%</span>
+          </div>
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div className="bg-emerald-500 h-full rounded-full w-[70%]" ></div>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex justify-between font-medium text-slate-700 mb-1">
+            <span>Otras (ej. VPH)</span>
+            <span className="text-slate-600 font-bold">40%</span>
+          </div>
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div className="bg-emerald-500 h-full rounded-full w-[40%]"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
+    <span>Esquema verificado por sanidad</span>
+    <span className="font-semibold text-emerald-600">Al día</span>
+  </div>
+</div>
+          {/* Tarjeta 3: Perfil Socioeconómico y Cobertura */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <TrendingUp className="text-[#0077b6]" size={18} />
+                  Perfil Socioeconómico y Cobertura
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center py-2">
+                <div className="relative flex flex-col items-center justify-center p-2">
+                  <div className="relative w-36 h-36 flex items-center justify-center">
+                    <svg className="w-full h-full text-emerald-500/80 drop-shadow-sm" viewBox="0 0 100 100">
+                      <polygon points="50,15 85,35 75,80 25,80 15,35" fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2,2" />
+                      <polygon points="50,28 72,42 65,70 35,70 28,42" fill="none" stroke="#94a3b8" strokeWidth="1" />
+                      <polygon points="50,20 80,38 70,75 30,72 18,40" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" strokeWidth="2" />
+                      <circle cx="50" cy="20" r="3" className="fill-emerald-600" />
+                      <circle cx="80" cy="38" r="3" className="fill-emerald-600" />
+                      <circle cx="70" cy="75" r="3" className="fill-emerald-600" />
+                      <circle cx="30" cy="72" r="3" className="fill-emerald-600" />
+                      <circle cx="18" cy="40" r="3" className="fill-emerald-600" />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-500 mt-1">Evaluación Multidimensional</span>
+                </div>
+
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-center">
+                  <CheckCircle2 className="mx-auto text-emerald-600 mb-2" size={28} />
+                  <h4 className="text-xs font-bold text-emerald-900 mb-1">Apto para Beneficios</h4>
+                  <p className="text-[11px] text-emerald-700 leading-tight">
+                    Cumples con el perfil para apoyos de transporte y bienestar institucional.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tarjeta 4: Historial y Cumplimiento Recaracterización */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <FileText className="text-[#0077b6]" size={18} />
+                  Historial y Cumplimiento Recaracterización
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 my-4 text-center">
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                  <div className="w-7 h-7 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-1.5">
+                    <Check size={14} strokeWidth={3} />
+                  </div>
+                  <span className="block text-[10px] font-bold text-slate-500">Mar 2026</span>
+                  <span className="block text-[11px] font-semibold text-slate-800 mt-0.5">Datos Actualizados</span>
+                  <span className="text-[10px] text-emerald-600 font-bold">(100%)</span>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                  <div className="w-7 h-7 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-1.5">
+                    <Check size={14} strokeWidth={3} />
+                  </div>
+                  <span className="block text-[10px] font-bold text-slate-500">Set 2026</span>
+                  <span className="block text-[11px] font-semibold text-slate-800 mt-0.5">Datos Actualizados</span>
+                  <span className="text-[10px] text-emerald-600 font-bold">(100%)</span>
+                </div>
+
+                <div className="bg-sky-50/50 border border-sky-100 rounded-xl p-3">
+                  <div className="w-7 h-7 mx-auto rounded-full bg-sky-100 text-[#0077b6] flex items-center justify-center mb-1.5">
+                    <Clock size={14} strokeWidth={2.5} />
+                  </div>
+                  <span className="block text-[10px] font-bold text-sky-700">Mar 2027</span>
+                  <span className="block text-[11px] font-semibold text-slate-800 mt-0.5">Próxima Actualización</span>
+                  <span className="text-[10px] text-sky-600 font-bold">Pendiente</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 text-[11px] text-slate-400 flex items-center gap-1.5 justify-center">
+              <Shield size={13} />
+              <span>Tus datos son confidenciales y protegidos por normatividad institucional.</span>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+    </main>
   );
 }

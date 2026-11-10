@@ -48,7 +48,8 @@ export default function SidebarAprendiz() {
   }
 
   function handleLogout() {
-    clearSession();`r`n    window.location.href = "/login";
+    clearSession();
+    window.location.href = "/login";
   }
   return (
     <aside className="relative flex h-full w-60 shrink-0 flex-col justify-between overflow-hidden bg-gradient-to-br from-sena-green to-emerald-600 text-white font-primary shadow-2xl select-none">
