@@ -1,6 +1,7 @@
 import { MetricCard } from "@/components/admin/MetricCard";
 import { QuickActionCard } from "@/components/admin/QuickActionCard";
 import { AdminBanner } from "@/components/admin/AdminBanner";
+import { BackButton } from "@/components/admin/BackButton";
 import {
   BarChart2,
   ClipboardCheck,
@@ -76,14 +77,15 @@ export default function AdminHomePage() {
       {/* ── Header / Saludo ── */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
+            <BackButton href="/login" label="Cerrar sesión" />
             <div>
               <h1 className="truncate text-2xl md:text-3xl font-black text-sena-navy tracking-tight">
                 Bienvenido(a), Valentina
               </h1>
             </div>
           </div>
-          <p className="mt-2.5 flex items-center gap-2 text-sm font-medium text-gray-500">
+          <p className="mt-2.5 flex items-center gap-2 text-sm font-medium text-gray-500 pl-[60px]">
             <span className="font-semibold text-sena-green">Rol:</span>
             <span className="truncate">
               Coordinador de Bienestar al Aprendiz · Regional Cauca (CTPI)

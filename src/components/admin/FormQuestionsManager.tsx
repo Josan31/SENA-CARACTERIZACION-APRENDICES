@@ -1,6 +1,8 @@
 "use client";
 
+// useState y useEffect para estado local del editor y sincronización con el store.
 import React, { useState, useEffect } from "react";
+// Íconos de lucide para acciones del editor: reordenar, editar, eliminar, guardar, etc.
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,6 +23,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+// Tipos del dominio de formularios y funciones del store local (localStorage + eventos)
 import { PreguntaFormulario, TipoPregunta } from "@/types/formularios";
 import {
   getPreguntasModulo,
@@ -31,27 +34,28 @@ import {
   toggleActivoPregunta,
   reordenarPregunta,
 } from "@/lib/formulariosStore";
+// DynamicFormRenderer renderiza el formulario tal como lo ve el aprendiz (vista previa)
 import DynamicFormRenderer from "@/components/formularios/DynamicFormRenderer";
 
-interface GestorPreguntasAdminProps {
+// Props que recibe el gestor: módulo a editar, títulos para mostrar y callback para volver
+interface FormQuestionsManagerProps {
   moduloId: string;
   tituloModulo: string;
   subtituloModulo: string;
   onVolver: () => void;
 }
-
-export default function GestorPreguntasAdmin({
+export default function FormQuestionsManager({
   moduloId,
   tituloModulo,
   subtituloModulo,
   onVolver,
-}: GestorPreguntasAdminProps) {
+}: FormQuestionsManagerProps) {
   const [preguntas, setPreguntas] = useState<PreguntaFormulario[]>([]);
   const [tabActiva, setTabActiva] = useState<"editor" | "preview">("editor");
   const [notificacion, setNotificacion] = useState<string | null>(null);
   const [guardandoBackend, setGuardandoBackend] = useState(false);
 
-  // Estados del modal de agregar / editar pregunta
+  // Estado del modal de agregar/editar pregunta y sus campos de formulario
   const [modalAbierto, setModalAbierto] = useState(false);
   const [preguntaEnEdicion, setPreguntaEnEdicion] = useState<PreguntaFormulario | null>(null);
 
@@ -69,6 +73,7 @@ export default function GestorPreguntasAdmin({
     setPreguntas(list);
   };
 
+  // Carga inicial y escucha el evento global para sincronizar cambios entre pestañas
   useEffect(() => {
     cargarPreguntas();
 
@@ -84,17 +89,18 @@ export default function GestorPreguntasAdmin({
     };
   }, [moduloId]);
 
+  // Muestra una notificación temporal de 3.5 segundos
   const mostrarAviso = (msg: string) => {
     setNotificacion(msg);
     setTimeout(() => setNotificacion(null), 3500);
   };
 
-  // Obtener lista única de secciones existentes
+  // Secciones únicas existentes para el datalist del modal
   const seccionesExistentes = Array.from(
     new Set(preguntas.map((p) => p.seccion).filter(Boolean))
   );
 
-  // Abrir modal para añadir
+  // Resetea todos los campos y abre el modal en modo creación
   const abrirModalNueva = () => {
     setPreguntaEnEdicion(null);
     setLabelForm("");
@@ -107,7 +113,7 @@ export default function GestorPreguntasAdmin({
     setModalAbierto(true);
   };
 
-  // Abrir modal para editar
+  // Carga los datos de la pregunta existente y abre el modal en modo edición
   const abrirModalEditar = (p: PreguntaFormulario) => {
     setPreguntaEnEdicion(p);
     setLabelForm(p.label);
@@ -120,7 +126,7 @@ export default function GestorPreguntasAdmin({
     setModalAbierto(true);
   };
 
-  // Guardar en modal (crear o actualizar)
+  // Crea o actualiza la pregunta según si hay una en edición o no
   const handleGuardarPreguntaModal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!labelForm.trim()) {

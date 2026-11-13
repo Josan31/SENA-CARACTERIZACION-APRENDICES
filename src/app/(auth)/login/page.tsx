@@ -1,7 +1,7 @@
 "use client";
 
 import { authenticate } from "@/lib/users";
-import { saveSession } from "@/lib/auth";
+import { saveSession, getDefaultRouteForUser } from "@/lib/auth";
 import { apiClient, ApiClientError } from "@/lib/api-client";
 import {
   AlertCircle,
@@ -112,6 +112,23 @@ function FormField({
    Main Page Component
 ───────────────────────────────────────────────────────── */
 
+interface AuthApiResponse {
+  accessToken: string;
+  expiresIn: string;
+  user: {
+    id: string;
+    nombre: string;
+    correo: string;
+    rol: string;
+    tipo?: "funcionario" | "aprendiz";
+    tipoDocumento?: string;
+    numeroDocumento?: string;
+    ficha?: string;
+    programa?: string;
+    centro?: string;
+  };
+}
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -142,7 +159,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const authData = await apiClient.post("/auth/login", {
+      const authData = await apiClient.post<AuthApiResponse>("/auth/login", {
         identificador: cleanDoc,
         password: cleanPass,
         tipoDocumento: docType,
@@ -156,11 +173,8 @@ export default function LoginPage() {
         };
         saveSession(authData.accessToken, userPayload);
 
-        if (authData.user.rol === "admin") {
-          window.location.href = "/admin";
-        } else {
-          window.location.href = "/aprendiz";
-        }
+        const targetUrl = getDefaultRouteForUser(userPayload);
+        window.location.href = targetUrl;
       }
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -180,11 +194,8 @@ export default function LoginPage() {
 
       if (typeof window !== "undefined" && authResult.user) {
         saveSession("demo_token", authResult.user);
-        if (authResult.user.rol === "admin") {
-          window.location.href = "/admin";
-        } else {
-          window.location.href = "/aprendiz";
-        }
+        const targetUrl = getDefaultRouteForUser(authResult.user);
+        window.location.href = targetUrl;
       }
     } finally {
       setIsLoading(false);

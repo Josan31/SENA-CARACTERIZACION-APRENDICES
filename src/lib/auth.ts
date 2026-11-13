@@ -67,9 +67,59 @@ export function isAuthenticated(): boolean {
 }
 
 /**
+ * Roles administrativos autorizados para acceder al panel institucional (/admin)
+ */
+export const ADMIN_ROLES = [
+  'admin',
+  'lider_bienestar',
+  'coordinacion',
+  'direccion_regional',
+  'calidad',
+] as const;
+
+export type AdminRole = (typeof ADMIN_ROLES)[number];
+
+/**
+ * Valida si un rol específico pertenece al grupo administrativo/personal SENA
+ */
+export function isAdminRole(role?: string | null): boolean {
+  if (!role) return false;
+  const normalized = role.toLowerCase().trim();
+  return ADMIN_ROLES.some((r) => r === normalized);
+}
+
+/**
+ * Determina si el usuario actual tiene permisos para ingresar al portal de administración
+ */
+export function canAccessAdmin(user?: { rol?: string; tipo?: string } | null): boolean {
+  if (!user) return false;
+  if (user.tipo === 'funcionario') return true;
+  return isAdminRole(user.rol);
+}
+
+/**
+ * Determina si el usuario actual es un aprendiz habilitado para ingresar al portal /aprendiz
+ */
+export function canAccessAprendiz(user?: { rol?: string; tipo?: string } | null): boolean {
+  if (!user) return false;
+  if (user.tipo === 'aprendiz') return true;
+  return (user.rol || '').toLowerCase().trim() === 'aprendiz';
+}
+
+/**
+ * Retorna la ruta inicial por defecto según el rol y tipo del usuario
+ */
+export function getDefaultRouteForUser(user?: { rol?: string; tipo?: string } | null): string {
+  if (canAccessAdmin(user)) return '/admin';
+  if (canAccessAprendiz(user)) return '/aprendiz';
+  return '/login';
+}
+
+/**
  * Comprueba si el usuario autenticado tiene un rol determinado
  */
-export function hasRole(role: 'admin' | 'aprendiz' | 'lider_bienestar'): boolean {
+export function hasRole(role: string): boolean {
   const user = getUser();
-  return user?.rol === role;
+  if (!user?.rol) return false;
+  return user.rol.toLowerCase().trim() === role.toLowerCase().trim();
 }

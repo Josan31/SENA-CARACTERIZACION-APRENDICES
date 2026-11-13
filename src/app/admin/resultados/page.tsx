@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { BackButton } from "@/components/admin/BackButton";
 
 /* ─────────────────────────────────────────────────────────
    Data
@@ -100,13 +101,16 @@ export default function ResultadosPage() {
 
       <div className="flex flex-1 gap-6 p-8 flex-col">
         {/* ── Page Header ── */}
-        <div>
-          <h1 className="text-2xl font-black text-sena-navy tracking-tight">
-            Administración de Resultados
-          </h1>
-          <p className="mt-1 text-sm font-medium text-gray-500">
-            Consulta y gestiona los resultados de tus programas y fichas de formación.
-          </p>
+        <div className="flex items-center gap-4">
+          <BackButton href="/admin" label="Volver al panel principal" />
+          <div>
+            <h1 className="text-2xl font-black text-sena-navy tracking-tight">
+              Administración de Resultados
+            </h1>
+            <p className="mt-1 text-sm font-medium text-gray-500">
+              Consulta y gestiona los resultados de tus programas y fichas de formación.
+            </p>
+          </div>
         </div>
 
         <div className="flex gap-6">

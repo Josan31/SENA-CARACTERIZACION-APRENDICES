@@ -457,25 +457,55 @@ async function main() {
   const mapa = await asegurarCatalogos();
   console.log(`>> Catálogos listos: ${mapa.size} valores`);
 
-  // Usuarios SENA ficticios (password solo como hash)
+  // Usuarios SENA ficticios (password solo como hash bcrypt)
+  // Administrador principal del sistema (SENA)
+  await prisma.usuario.upsert({
+    where: { correo: 'admin@sena.edu.co' },
+    update: {
+      password: hashPassword('12345'),
+      rol: 'admin',
+      activo: true,
+    },
+    create: {
+      nombre: 'Carlos Alberto Restrepo (Administrador)',
+      correo: 'admin@sena.edu.co',
+      password: hashPassword('12345'),
+      rol: 'admin',
+      activo: true,
+    },
+  });
+
+  // Administrador demo alternativo
   await prisma.usuario.upsert({
     where: { correo: 'admin.demo@ejemplo.com' },
-    update: {},
+    update: {
+      password: hashPassword('12345'),
+      rol: 'admin',
+      activo: true,
+    },
     create: {
       nombre: 'Admin Demo (ficticio)',
       correo: 'admin.demo@ejemplo.com',
-      password: hashPassword('demo-no-produccion'),
+      password: hashPassword('12345'),
       rol: 'admin',
+      activo: true,
     },
   });
+
+  // Líder de Bienestar al Aprendiz
   await prisma.usuario.upsert({
     where: { correo: 'lider.demo@ejemplo.com' },
-    update: {},
+    update: {
+      password: hashPassword('12345'),
+      rol: 'lider_bienestar',
+      activo: true,
+    },
     create: {
       nombre: 'Líder Bienestar Demo (ficticio)',
       correo: 'lider.demo@ejemplo.com',
-      password: hashPassword('demo-no-produccion'),
+      password: hashPassword('12345'),
       rol: 'lider_bienestar',
+      activo: true,
     },
   });
 

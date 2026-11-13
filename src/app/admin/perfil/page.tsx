@@ -2,7 +2,6 @@
 
 import React from "react";
 import {
-  ArrowLeft,
   UserRound,
   Mail,
   Phone,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCurrentUser, getInitials } from "@/hooks/useCurrentUser";
+import { BackButton } from "@/components/admin/BackButton";
 
 /* ─────────────────────────────────────────────────────────
    Types
@@ -133,9 +133,13 @@ export default function PerfilAdministradorPage() {
   const initials = getInitials(nombre);
 
   return (
-    <main className="min-h-screen bg-[#eaf7f6] p-3 text-slate-700 sm:p-6 lg:p-8">
+    <main className="min-h-screen p-3 text-slate-700 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1440px] overflow-hidden rounded-2xl border border-white/80 bg-white/75 shadow-[0_12px_45px_rgba(20,100,100,0.08)]">
         <div className="p-4 sm:p-7 lg:p-8">
+          {/* ── Back button ── */}
+          <div className="mb-5">
+            <BackButton href="/admin" label="Volver al panel principal" />
+          </div>
           {/* ── Hero row ── */}
           <section className="grid gap-5 border-b border-[#e4f1ef] pb-6 md:grid-cols-[minmax(0,1fr)_300px] md:items-center">
             <div className="flex min-w-0 items-center gap-4 sm:gap-6">

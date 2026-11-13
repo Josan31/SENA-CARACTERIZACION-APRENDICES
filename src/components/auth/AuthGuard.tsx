@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUser, getToken } from "@/lib/auth";
+import {
+  getUser,
+  getToken,
+  canAccessAdmin,
+  canAccessAprendiz,
+  getDefaultRouteForUser,
+} from "@/lib/auth";
 
 interface AuthGuardProps {
   children: React.ReactNode;
-  requiredRole?: "admin" | "aprendiz";
+  requiredRole?: "admin" | "aprendiz" | string;
 }
 
 /**
@@ -25,13 +31,34 @@ export default function AuthGuard({ children, requiredRole }: AuthGuardProps) {
       return;
     }
 
-    // 2. Control de acceso basado en roles (RBAC)
-    if (requiredRole && user.rol !== requiredRole) {
-      if (user.rol === "admin") {
-        window.location.href = "/admin";
-      } else {
-        window.location.href = "/aprendiz";
+    // 2. Control de acceso basado en roles institucionales (RBAC)
+    if (requiredRole === "admin") {
+      // Permite acceso a personal administrativo: admin, lider_bienestar, coordinacion, etc.
+      if (!canAccessAdmin(user)) {
+        if (canAccessAprendiz(user)) {
+          window.location.href = "/aprendiz";
+        } else {
+          window.location.href = "/login";
+        }
+        return;
       }
+    } else if (requiredRole === "aprendiz") {
+      // Exclusivo para aprendices
+      if (!canAccessAprendiz(user)) {
+        if (canAccessAdmin(user)) {
+          window.location.href = "/admin";
+        } else {
+          window.location.href = "/login";
+        }
+        return;
+      }
+    } else if (requiredRole && user.rol !== requiredRole) {
+      const target = getDefaultRouteForUser(user);
+      if (window.location.pathname.startsWith(target)) {
+        setIsAuthorized(true);
+        return;
+      }
+      window.location.href = target;
       return;
     }
 

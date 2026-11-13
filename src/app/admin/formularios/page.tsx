@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ArrowLeft,
   ArrowRight,
   Pencil,
   Plus,
@@ -14,6 +13,7 @@ import {
   Check,
   Save,
 } from "lucide-react";
+import { BackButton } from "@/components/admin/BackButton";
 
 import FormularioBasica from "@/components/formularios/FormularioBasica";
 import FormularioSalud from "@/components/formularios/FormularioSalud";
@@ -22,7 +22,7 @@ import FormularioFormativo from "@/components/formularios/FormularioFormativo";
 import FormularioConsentimiento from "@/components/formularios/FormularioConsentimiento";
 import FormularioRecaracterizacion from "@/components/formularios/FormularioRecaracterizacion";
 import FormularioWizardCompleto from "@/components/formularios/FormularioWizardCompleto";
-import GestorPreguntasAdmin from "@/components/admin/GestorPreguntasAdmin";
+import FormQuestionsManager from "@/components/admin/FormQuestionsManager";
 
 /* ──────────────────────────────────────────────────────────────────────────
    ILUSTRACIONES VECTORIALES SVG EXACTAS AL MOCKUP DEL ADMINISTRADOR
@@ -331,8 +331,8 @@ function AdminFormulariosContent() {
     // Módulos con gestor dinámico de preguntas (añadir, modificar, quitar, sincronizar)
     if (["basica", "salud", "socioeconomica", "formativo"].includes(selectedForm)) {
       return (
-        <div className="flex-1 w-full bg-[#edf5f7] p-4 sm:p-6 md:p-8 font-primary">
-          <GestorPreguntasAdmin
+        <div className="flex-1 w-full p-4 sm:p-6 md:p-8 font-primary">
+          <FormQuestionsManager
             moduloId={selectedForm}
             tituloModulo={formTitle}
             subtituloModulo={formSubtitle}
@@ -347,20 +347,15 @@ function AdminFormulariosContent() {
       <div className="flex-1 w-full bg-[#edf5f7] p-4 sm:p-6 md:p-8 font-primary">
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm border border-slate-200">
-            <button
-              type="button"
-              onClick={() => setSelectedForm(null)}
-              className="flex items-center gap-2 rounded-xl bg-slate-100 hover:bg-slate-200 px-4 py-2 text-xs font-bold text-[#00304d] transition-all cursor-pointer"
-            >
-              <ArrowLeft size={16} strokeWidth={2.5} />
-              <span>Volver a Gestión de Formularios</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <BackButton label="Volver a Gestión de Formularios" />
+              <span className="text-xs font-bold text-[#00304d]">Volver a Gestión de Formularios</span>
+            </div>
 
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#008f4c] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
               Visualizando: {formTitle}
             </span>
           </div>
-
           <main className="rounded-3xl bg-white p-4 sm:p-8 shadow-sm border border-slate-200">
             {selectedForm === "consentimiento" && <FormularioConsentimiento />}
             {selectedForm === "recaracterizacion" && <FormularioRecaracterizacion />}
@@ -375,7 +370,7 @@ function AdminFormulariosContent() {
   // VISTA PRINCIPAL: MOCKUP EXACTO DE GESTIÓN DE FORMULARIOS ADMIN
   // ════════════════════════════════════════════════════════════════════════
   return (
-    <div className="flex-1 w-full bg-[#edf5f7] p-4 sm:p-6 md:p-8 font-primary selection:bg-emerald-100 selection:text-emerald-900">
+    <div className="flex-1 w-full p-4 sm:p-6 md:p-8 font-primary selection:bg-emerald-100 selection:text-emerald-900">
       {/* Notificación flotante */}
       {notification && (
         <div className="fixed top-6 right-8 z-50 flex items-center gap-2.5 rounded-2xl bg-[#00875a] px-5 py-3 text-xs font-bold text-white shadow-xl animate-in slide-in-from-top-3">
@@ -389,15 +384,7 @@ function AdminFormulariosContent() {
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
             {/* Botón Circular de Retorno */}
-            <button
-              type="button"
-              onClick={() => router.push("/admin")}
-              className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-white text-[#00304d] shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-slate-200 hover:bg-slate-50 transition-all cursor-pointer hover:-translate-x-0.5 active:scale-95"
-              aria-label="Volver atrás"
-              title="Volver"
-            >
-              <ArrowLeft size={20} strokeWidth={2.6} />
-            </button>
+            <BackButton href="/admin" label="Volver al inicio" />
 
             {/* Título y Subtítulo de Gestión */}
             <div className="space-y-0.5 pt-0.5">
@@ -540,7 +527,7 @@ export default function AdminFormulariosPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#edf5f7]">
+        <div className="flex min-h-screen items-center justify-center">
           <div className="h-9 w-9 animate-spin rounded-full border-4 border-[#008f4c] border-t-transparent" />
         </div>
       }

@@ -2,7 +2,6 @@
 
 import {
   AlertCircle,
-  ArrowLeft,
   CheckCircle2,
   ChevronDown,
   KeyRound,
@@ -25,6 +24,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { getUser } from "@/lib/auth";
+import { BackButton } from "@/components/admin/BackButton";
 import {
   getUsuarios,
   createUsuario,
@@ -392,13 +392,7 @@ export default function AdministracionPage() {
       {/* ── Page header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link
-            href="/admin"
-            aria-label="Volver al panel principal"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sena-green text-white shadow-md transition-all hover:bg-sena-green-dark hover:shadow-lg active:scale-95"
-          >
-            <ArrowLeft size={18} strokeWidth={2.5} />
-          </Link>
+          <BackButton href="/admin" label="Volver al panel principal" />
           <div>
             <h1 className="text-2xl font-black text-sena-navy tracking-tight">
               Administración de Cuentas SENA

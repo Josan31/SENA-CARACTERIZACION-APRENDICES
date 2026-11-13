@@ -86,7 +86,16 @@ export class AuthService {
     // --------------------------------------------------------------------------
     // 3. FALLBACK DE DESARROLLO (si la base de datos no tiene los registros demo)
     // --------------------------------------------------------------------------
-    if (cleanId === 'admin' && (cleanPass === '12345' || cleanPass === 'admin123')) {
+    if (
+      (cleanId === 'admin' ||
+        cleanId === '1098765432' ||
+        cleanId === 'admin@sena.edu.co' ||
+        cleanId === 'admin.demo@ejemplo.com') &&
+      (cleanPass === '12345' ||
+        cleanPass === 'admin123' ||
+        cleanPass === 'Admin123*' ||
+        cleanPass === 'demo-no-produccion')
+    ) {
       return this.generarRespuestaDemoAdmin();
     }
 
@@ -194,17 +203,35 @@ export class AuthService {
   }
 
   private async buscarUsuarioFuncionario(cleanId: string) {
-    if (cleanId === 'admin') {
+    if (
+      cleanId === 'admin' ||
+      cleanId === '1098765432' ||
+      cleanId === 'admin@sena.edu.co' ||
+      cleanId === 'carestrepo@sena.edu.co'
+    ) {
       const adminUser = await this.prisma.usuario.findFirst({
         where: {
           OR: [
             { rol: 'admin' },
+            { correo: { in: ['admin@sena.edu.co', 'admin.demo@ejemplo.com', 'carestrepo@sena.edu.co'] } },
             { correo: { contains: 'admin', mode: 'insensitive' } },
             { nombre: { contains: 'admin', mode: 'insensitive' } },
           ],
         },
       });
       if (adminUser) return adminUser;
+    }
+
+    if (cleanId === 'lider' || cleanId === 'lider_bienestar') {
+      const liderUser = await this.prisma.usuario.findFirst({
+        where: {
+          OR: [
+            { rol: 'lider_bienestar' },
+            { correo: 'lider.demo@ejemplo.com' },
+          ],
+        },
+      });
+      if (liderUser) return liderUser;
     }
 
     return this.prisma.usuario.findFirst({
@@ -246,7 +273,15 @@ export class AuthService {
     hashGuardado: string,
     cleanId: string,
   ): Promise<boolean> {
-    if (cleanId === 'admin' && (passwordIngresada === '12345' || passwordIngresada === 'admin123')) {
+    if (
+      (cleanId === 'admin' ||
+        cleanId === '1098765432' ||
+        cleanId === 'lider' ||
+        cleanId === 'lider_bienestar') &&
+      (passwordIngresada === '12345' ||
+        passwordIngresada === 'admin123' ||
+        passwordIngresada === 'demo-no-produccion')
+    ) {
       return true;
     }
 
