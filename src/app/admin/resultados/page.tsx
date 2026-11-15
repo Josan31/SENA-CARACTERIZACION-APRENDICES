@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -16,13 +17,19 @@ import {
     Wrench,
     XCircle,
 } from "lucide-react";
+
 import Image from "next/image";
 import { useState } from "react";
+<<<<<<< HEAD
 import { BackButton } from "@/components/admin/BackButton";
+=======
+import { useRouter } from "next/navigation";
+>>>>>>> 3e540c7 (actualizacion:admin/resultados)
 
 /* ─────────────────────────────────────────────────────────
    Data
 ───────────────────────────────────────────────────────── */
+
 const RESULTS = [
   { id: 472851, title: "Técnico en Desarrollo de Software",            icon: Code2      },
   { id: 951360, title: "Tecnólogo en Gestión Empresarial",             icon: Settings   },
@@ -52,8 +59,13 @@ function ResultRow({
   title: string;
   icon: React.ElementType;
 }) {
+
+  // Inicializa el sistema de navegación de Next.js.
+  const router = useRouter();
+
   return (
     <article className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+
       {/* Icon badge */}
       <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#e8f8f0] to-[#c8eedd]">
         <span
@@ -61,12 +73,20 @@ function ResultRow({
           style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }}
           aria-hidden="true"
         />
-        <Icon size={20} className="relative text-sena-green-dark" strokeWidth={2} />
+
+        <Icon
+          size={20}
+          className="relative text-sena-green-dark"
+          strokeWidth={2}
+        />
       </div>
 
       {/* Text */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-bold text-sena-navy truncate">{title}</h3>
+        <h3 className="text-sm font-bold text-sena-navy truncate">
+          {title}
+        </h3>
+
         <p className="text-xs font-medium text-gray-400 mt-0.5">
           Identificación: {id}
         </p>
@@ -75,14 +95,22 @@ function ResultRow({
       {/* Detail CTA */}
       <button
         type="button"
+        onClick={() => router.push("/admin/resultados/resultados-0.1")}
         className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-sena-green to-sena-green-dark px-4 py-2 text-xs font-bold text-white shadow-sm transition-opacity hover:opacity-90"
       >
         <span>Ver Detalle</span>
-        <ArrowRight size={13} strokeWidth={2.5} aria-hidden="true" />
+
+        <ArrowRight
+          size={13}
+          strokeWidth={2.5}
+          aria-hidden="true"
+        />
       </button>
+
     </article>
   );
 }
+
 
 /* ─────────────────────────────────────────────────────────
    Page
