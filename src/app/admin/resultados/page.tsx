@@ -20,11 +20,8 @@ import {
 
 import Image from "next/image";
 import { useState } from "react";
-<<<<<<< HEAD
-import { BackButton } from "@/components/admin/BackButton";
-=======
 import { useRouter } from "next/navigation";
->>>>>>> 3e540c7 (actualizacion:admin/resultados)
+import { BackButton } from "@/components/admin/BackButton";
 
 /* ─────────────────────────────────────────────────────────
    Data
